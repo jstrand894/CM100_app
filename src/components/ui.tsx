@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,12 +42,30 @@ export function ScreenHeader({ title, subtitle }: { title: string; subtitle?: st
   );
 }
 
+// Blue header for pushed (non-tab) screens, with a back button and optional right-hand content.
+export function DetailHeader({ title, subtitle, children }: { title: string; subtitle?: string; children?: ReactNode }) {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
+      <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} hitSlop={12} style={styles.back} accessibilityLabel="Go back">
+        <Ionicons name="chevron-back" size={22} color="#ffffff" />
+        <Text style={styles.backText}>Back</Text>
+      </Pressable>
+      <Text style={styles.headerTitle}>{title}</Text>
+      {subtitle ? <Text style={styles.headerSub}>{subtitle}</Text> : null}
+      {children}
+    </View>
+  );
+}
+
 // Soft tinted background for a status color, e.g. a chip behind green text.
 export const tint = (hex: string, alpha = 0.14) =>
   hex + Math.round(alpha * 255).toString(16).padStart(2, '0');
 
 const styles = StyleSheet.create({
   header: { backgroundColor: BRAND_BLUE, paddingHorizontal: 20, paddingBottom: 22, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+  back: { flexDirection: 'row', alignItems: 'center', marginLeft: -6, marginBottom: 6, alignSelf: 'flex-start' },
+  backText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
   headerTitle: { color: '#ffffff', fontSize: 28, fontWeight: '800' },
   headerSub: { color: '#bcd6e6', fontSize: 14, fontWeight: '600', marginTop: 4 },
   card: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 12 },
