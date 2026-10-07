@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ElevationChart } from '../../src/components/ElevationChart';
@@ -144,6 +144,25 @@ export default function CourseScreen() {
       }),
     [progress, settle],
   );
+  // Zoomed window that follows the selected station; pulling the header down widens it to the whole course.
+  const ZOOM_SPAN = 38;
+  const center = useRef(new Animated.Value(AID_STATIONS[0].mile)).current;
+  const [view, setView] = useState({ start: 0, span: ZOOM_SPAN });
+  useEffect(() => {
+    let c = AID_STATIONS[0].mile, p = 0;
+    const apply = () => {
+      const span = ZOOM_SPAN + (100 - ZOOM_SPAN) * p;
+      setView({ start: Math.min(Math.max(c - span / 2, 0), 100 - span), span });
+    };
+    const a = center.addListener(({ value }) => { c = value; apply(); });
+    const b = progress.addListener(({ value }) => { p = value; apply(); });
+    return () => { center.removeListener(a); progress.removeListener(b); };
+  }, [center, progress]);
+  useEffect(() => {
+    const m = AID_STATIONS.find((s) => s.id === activeId)?.mile ?? 0;
+    Animated.spring(center, { toValue: m, useNativeDriver: false, speed: 12, bounciness: 0 }).start();
+  }, [activeId, center]);
+
   const panelHeight = progress.interpolate({ inputRange: [0, 1], outputRange: [0, PANEL_H] });
 
   // The selected station always sits in a fixed slot at the top of the list. Rows snap into that slot,
@@ -194,9 +213,9 @@ export default function CourseScreen() {
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]} {...pan.panHandlers}>
         <Text style={styles.title}>Course</Text>
-        <Text style={styles.sub}>Drag the profile · pull down for details</Text>
+        <Text style={styles.sub}>Pull down to see the whole course</Text>
         <View style={styles.chart}>
-          <ElevationChart stations={AID_STATIONS} height={185} activeStationId={activeId} onSelectStation={jumpTo} tone="dark" />
+          <ElevationChart stations={AID_STATIONS} height={185} activeStationId={activeId} onSelectStation={jumpTo} tone="dark" viewStart={view.start} viewSpan={view.span} />
         </View>
         <Animated.View style={{ height: panelHeight, overflow: 'hidden', opacity: progress }}>
           <View style={{ paddingHorizontal: 8, paddingTop: 4 }}>
