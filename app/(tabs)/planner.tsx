@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Card, SectionTitle, tint } from '../src/components/ui';
-import { AID_STATIONS } from '../src/data/aidStations';
+import { Card, ScreenHeader, SectionTitle, tint } from '../../src/components/ui';
+import { AID_STATIONS } from '../../src/data/aidStations';
 import {
   AID_STOP_MINUTES,
   clockLabel,
@@ -13,8 +13,8 @@ import {
   elapsedHours,
   impliedFinishHours,
   START_HOUR,
-} from '../src/data/pace';
-import { useTheme } from '../src/theme';
+} from '../../src/data/pace';
+import { useTheme } from '../../src/theme';
 
 const GOAL_KEY = 'cm100.goalMinutes';
 const LOG_KEY = 'cm100.liveLogs';
@@ -101,7 +101,9 @@ export default function PlannerScreen() {
   const loggable = AID_STATIONS.filter((s) => s.kind !== 'start');
 
   return (
-    <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={styles.content}>
+    <View style={{ flex: 1, backgroundColor: t.bg }}>
+    <ScreenHeader title="Pace planner" subtitle="When will your runner reach each station?" />
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
       <View style={[styles.segment, { backgroundColor: t.primarySoft }]}>
         {(['goal', 'live'] as Mode[]).map((m) => (
           <Pressable key={m} onPress={() => setMode(m)} style={[styles.segBtn, mode === m && { backgroundColor: t.card }]}>
@@ -268,6 +270,7 @@ export default function PlannerScreen() {
         race warns that Sunlight and Crandall, and Crandall and Forest Lake, are hard to crew together because of rough roads.
       </Text>
     </ScrollView>
+    </View>
   );
 }
 
