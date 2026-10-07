@@ -40,9 +40,8 @@ export default function HomeScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const heroHeight = insets.top + 250;
-  const heroTranslate = scrollY.interpolate({ inputRange: [0, heroHeight], outputRange: [0, heroHeight * 0.45], extrapolate: 'clamp' });
-  const heroOpacity = scrollY.interpolate({ inputRange: [0, heroHeight * 0.75], outputRange: [1, 0], extrapolate: 'clamp' });
-  const heroScale = scrollY.interpolate({ inputRange: [-200, 0, heroHeight], outputRange: [1.25, 1, 0.92], extrapolate: 'clamp' });
+  // Hero stays fixed; only stretches slightly when pulling down past the top.
+  const heroScale = scrollY.interpolate({ inputRange: [-200, 0], outputRange: [1.2, 1], extrapolate: 'clamp' });
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
@@ -52,7 +51,7 @@ export default function HomeScreen() {
       <Animated.View
         style={[
           styles.hero,
-          { height: heroHeight, paddingTop: insets.top + 16, opacity: heroOpacity, transform: [{ translateY: heroTranslate }, { scale: heroScale }] },
+          { height: heroHeight, paddingTop: insets.top + 16, transform: [{ scale: heroScale }] },
         ]}
       >
         <View style={styles.logoCard}>
