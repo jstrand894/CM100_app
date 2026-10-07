@@ -100,9 +100,49 @@ export default function PlannerScreen() {
 
   const loggable = AID_STATIONS.filter((s) => s.kind !== 'start');
 
+  const resultNode = mode === 'live' ? (() => {
+        const li = lastLoggedIdx;
+        // Next stop worth reporting: the next station after the latest logged one that isn't a cutoff-only checkpoint.
+        let ni = li + 1;
+        while (ni < AID_STATIONS.length - 1 && (AID_STATIONS[ni].kind === 'cutoff' || AID_STATIONS[ni].crewAccess === 'no')) ni++;
+        const between = AID_STATIONS.slice(li + 1, ni).filter((x) => x.kind !== 'cutoff');
+        const from = AID_STATIONS[li];
+        const nextSt = AID_STATIONS[ni];
+        if (li < 0 || !nextSt)
+          return (
+            <Card>
+              <Text style={[styles.hintText, { color: t.muted }]}>
+                Pick a station above, set the time your runner got there, and save. You'll see when they should reach the next aid station.
+              </Text>
+            </Card>
+          );
+        const nextAbs = START_ABS + Math.round(elapsed[nextSt.id] * 60);
+        const legMin = Math.round((elapsed[nextSt.id] - (logs[from.id] != null ? (logs[from.id] - START_ABS) / 60 : elapsed[from.id])) * 60);
+        const miles = Math.round((nextSt.mile - from.mile) * 10) / 10;
+        const cutoffH = CUTOFF_HOURS[nextSt.id];
+        const margin = cutoffH != null ? cutoffH - elapsed[nextSt.id] : null;
+        return (
+          <View style={[styles.result, { backgroundColor: t.primary }]}>
+            <Text style={styles.resultKicker}>{`NEXT CREW STOP · FROM ${from.name.replace(/^(Start|Finish): /, '').toUpperCase()} AT ${absLabel(logs[from.id]).toUpperCase()}`}</Text>
+            <Text style={styles.resultTitle}>{nextSt.name.replace(/^(Start|Finish): /, '')}</Text>
+            <Text style={styles.resultTime}>{absLabel(nextAbs)}</Text>
+            {between.length > 0 && (
+              <Text style={styles.resultMeta}>
+                {`Passes ${between.map((b) => `${b.name.replace(/ \((first|second) visit\)/, '')} ${absLabel(START_ABS + Math.round(elapsed[b.id] * 60)).replace(/^\w+ /, '')}`).join(', ')}`}
+              </Text>
+            )}
+            <Text style={styles.resultMeta}>
+              {`${miles} mi · about ${durationLabel(legMin / 60)} from ${from.name.replace(/^(Start|Finish): /, '')}`}
+              {margin != null ? ` · ${margin >= 0 ? durationLabel(margin) + ' ahead of' : durationLabel(margin) + ' behind'} cutoff` : ''}
+            </Text>
+          </View>
+        );
+      })() : null;
+
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
     <ScreenHeader title="Pace planner" subtitle="When will your runner reach each station?" />
+    {resultNode && <View style={styles.pinned}>{resultNode}</View>}
     <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
       <View style={[styles.segment, { backgroundColor: t.primarySoft }]}>
         {(['live', 'goal'] as Mode[]).map((m) => (
@@ -201,44 +241,6 @@ export default function PlannerScreen() {
         </Card>
       )}
 
-      {mode === 'live' && (() => {
-        const li = lastLoggedIdx;
-        // Next stop worth reporting: the next station after the latest logged one that isn't a cutoff-only checkpoint.
-        let ni = li + 1;
-        while (ni < AID_STATIONS.length - 1 && (AID_STATIONS[ni].kind === 'cutoff' || AID_STATIONS[ni].crewAccess === 'no')) ni++;
-        const between = AID_STATIONS.slice(li + 1, ni).filter((x) => x.kind !== 'cutoff');
-        const from = AID_STATIONS[li];
-        const nextSt = AID_STATIONS[ni];
-        if (li < 0 || !nextSt)
-          return (
-            <Card>
-              <Text style={[styles.hintText, { color: t.muted }]}>
-                Pick a station above, set the time your runner got there, and save. You'll see when they should reach the next aid station.
-              </Text>
-            </Card>
-          );
-        const nextAbs = START_ABS + Math.round(elapsed[nextSt.id] * 60);
-        const legMin = Math.round((elapsed[nextSt.id] - (logs[from.id] != null ? (logs[from.id] - START_ABS) / 60 : elapsed[from.id])) * 60);
-        const miles = Math.round((nextSt.mile - from.mile) * 10) / 10;
-        const cutoffH = CUTOFF_HOURS[nextSt.id];
-        const margin = cutoffH != null ? cutoffH - elapsed[nextSt.id] : null;
-        return (
-          <View style={[styles.result, { backgroundColor: t.primary }]}>
-            <Text style={styles.resultKicker}>{`NEXT CREW STOP · FROM ${from.name.replace(/^(Start|Finish): /, '').toUpperCase()} AT ${absLabel(logs[from.id]).toUpperCase()}`}</Text>
-            <Text style={styles.resultTitle}>{nextSt.name.replace(/^(Start|Finish): /, '')}</Text>
-            <Text style={styles.resultTime}>{absLabel(nextAbs)}</Text>
-            {between.length > 0 && (
-              <Text style={styles.resultMeta}>
-                {`Passes ${between.map((b) => `${b.name.replace(/ \((first|second) visit\)/, '')} ${absLabel(START_ABS + Math.round(elapsed[b.id] * 60)).replace(/^\w+ /, '')}`).join(', ')}`}
-              </Text>
-            )}
-            <Text style={styles.resultMeta}>
-              {`${miles} mi · about ${durationLabel(legMin / 60)} from ${from.name.replace(/^(Start|Finish): /, '')}`}
-              {margin != null ? ` · ${margin >= 0 ? durationLabel(margin) + ' ahead of' : durationLabel(margin) + ' behind'} cutoff` : ''}
-            </Text>
-          </View>
-        );
-      })()}
 
       <SectionTitle>{liveActive ? 'Updated arrival times' : 'When your runner arrives'}</SectionTitle>
       {AID_STATIONS.map((s, idx) => {
@@ -350,8 +352,9 @@ const styles = StyleSheet.create({
   logged: { fontSize: 11, fontWeight: '700', marginTop: 2 },
   tag: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10, marginTop: 8 },
   tagText: { fontSize: 12, fontWeight: '700', flexShrink: 1 },
+  pinned: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, zIndex: 2 },
   hintText: { fontSize: 14, lineHeight: 20, textAlign: 'center' },
-  result: { borderRadius: 18, padding: 16, marginBottom: 6 },
+  result: { borderRadius: 18, padding: 16, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
   resultKicker: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 0.6 },
   resultTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800', marginTop: 8 },
   resultTime: { color: '#ffffff', fontSize: 34, fontWeight: '900', marginTop: 2 },
