@@ -12,11 +12,13 @@ export default function RootLayout() {
           headerStyle: { backgroundColor: t.bg },
           headerTintColor: t.text,
           headerShadowVisible: false,
+          headerBackTitle: 'Back',
           contentStyle: { backgroundColor: t.bg },
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="aid/[id]" options={{ title: 'Aid station' }} />
+        <Stack.Screen name="info/[slug]" options={{ title: '' }} />
       </Stack>
     </>
   );

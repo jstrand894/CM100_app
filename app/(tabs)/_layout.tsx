@@ -19,7 +19,7 @@ export default function TabLayout() {
         headerShadowVisible: false,
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Race', tabBarIcon: icon('flag') }} />
+      <Tabs.Screen name="index" options={{ title: 'Home', headerShown: false, tabBarIcon: icon('home') }} />
       <Tabs.Screen name="map" options={{ title: 'Map', headerShown: false, tabBarIcon: icon('map') }} />
       <Tabs.Screen name="aid" options={{ title: 'Aid stations', tabBarIcon: icon('medkit') }} />
       <Tabs.Screen name="track" options={{ title: 'Tracking', tabBarIcon: icon('locate') }} />

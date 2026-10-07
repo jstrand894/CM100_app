@@ -78,7 +78,7 @@ export const AID_STATIONS: AidStation[] = [
     driveCoordinate: null,
     courseCoordinate: { latitude: 46.00462, longitude: -110.43919 },
     summary: "Cutoff 1:00 PM Friday. Drop bags. About 35–41 min from Wilsall.",
-    details: ["Park at the first lot or before the gate. Do not park at the cabin.", "Crew may help up to the trail turnoff from the main road, because of congestion.", "Route from Wilsall: HWY 89 south, Horse Creek Rd, Upper Cottonwood Creek Rd, Ibex Rd."],
+    details: ["Park in the mowed lot or pull off the road before it, all the way to one side so vehicles can pass. No vehicles past the mowed lot. Do not block the intersection where runners leave the road.", "Park at the first lot or before the gate. Do not park at the cabin.", "Crew may help up to the trail turnoff from the main road, because of congestion.", "Route from Wilsall: HWY 89 south, Horse Creek Rd, Upper Cottonwood Creek Rd, Ibex Rd."],
   },
   {
     id: "cow-camp-1",
@@ -168,7 +168,7 @@ export const AID_STATIONS: AidStation[] = [
     driveCoordinate: { latitude: 46.14195, longitude: -110.43031 },
     courseCoordinate: { latitude: 46.1371, longitude: -110.4263 },
     summary: "No vehicle access. Hike in about 0.7 mi. Cutoff 5:30 AM Saturday.",
-    details: ["Park on Sunlight Creek Rd 6630 where the A-frame sign says to, then hike the forest road along the race route.", "You may not drive past the parking area. The road is narrow and there is no parking at the aid station.", "You may not be able to crew Crandall Creek if you crew here. Best suited to swapping pacers."],
+    details: ["You won't make it to both Sunlight and Crandall Creek.", "The road is extremely rough and slow. 4-wheel drive and good, solid tires are a must. From Wilsall: Shields River Rd for 19.7 mi, then follow signs to Sunlight Trailhead for 1.5 mi.", "Park on Sunlight Creek Rd 6630 where the A-frame sign says to, then hike the forest road along the race route.", "You may not drive past the parking area. The road is narrow and there is no parking at the aid station.", "You may not be able to crew Crandall Creek if you crew here. Best suited to swapping pacers."],
   },
   {
     id: "crandall",
@@ -186,7 +186,7 @@ export const AID_STATIONS: AidStation[] = [
     driveCoordinate: null,
     courseCoordinate: { latitude: 46.18633, longitude: -110.40751 },
     summary: "Via Shields River Rd and Bennett Creek Rd. Cutoff 7:45 AM Saturday.",
-    details: ["Allow about 2.5 hours from Half Moon.", "You will not be able to crew both Crandall Creek and Forest Lake unless your runner is near the back of the pack. Choose one."],
+    details: ["Crandall to Forest Lake is only 7.9 mi for your runner but a rough drive, so your runner must average under a 19 min/mile to make it. Consider splitting your crew, or meeting them at the finish area instead.", "From Wilsall: head north, turn right on Shields River Rd for 20.4 mi (stay left at the junction to Sunlight campground), then Bennett Creek Rd for 2.9 mi.", "Allow about 2.5 hours from Half Moon.", "You will not be able to crew both Crandall Creek and Forest Lake unless your runner is near the back of the pack. Choose one."],
   },
   {
     id: "forest-lake",
@@ -204,7 +204,7 @@ export const AID_STATIONS: AidStation[] = [
     driveCoordinate: null,
     courseCoordinate: { latitude: 46.24679, longitude: -110.43706 },
     summary: "Use the 1 hr 24 min, 65.7 mi route from Wilsall. Cutoff 10:15 AM Saturday.",
-    details: ["Do NOT take the shorter route a map app may show. It is not a road.", "US-89 N, MT-294 E, Cottonwood Creek Rd, then Forest Lake Rd.", "Pacers starting at or before Forest Lake must continue to the finish."],
+    details: ["The road to Forest Lake is extremely rough. Park below the camping loop along the road, and do not block the running route.", "Do NOT take the shorter route a map app may show. It is not a road.", "US-89 N, MT-294 E, Cottonwood Creek Rd, then Forest Lake Rd.", "Pacers starting at or before Forest Lake must continue to the finish."],
   },
   {
     id: "honey-trail",

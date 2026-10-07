@@ -4,6 +4,8 @@ export const RACE = {
   tagline: 'Wilsall to Lennep, Montana',
   dateLabel: 'July 30–31, 2027',
   startTimeLabel: 'Friday, 6:00 AM',
+  // 6:00 AM Mountain Daylight Time (UTC-6)
+  startIso: '2027-07-30T12:00:00Z',
   start: 'Westling Ranch, Wilsall, MT',
   finish: 'Berg Ranch, Lennep, MT',
   distance: '100 miles (point to point)',
