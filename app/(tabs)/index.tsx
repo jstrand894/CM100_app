@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Href, router } from 'expo-router';
-import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRef } from 'react';
+import { Animated, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { INFO_PAGES, MENU } from '../../src/data/info';
 import { HIGHLIGHTS, RACE } from '../../src/data/race';
@@ -36,10 +37,24 @@ export default function HomeScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const c = countdown();
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  const heroHeight = insets.top + 250;
+  const heroTranslate = scrollY.interpolate({ inputRange: [0, heroHeight], outputRange: [0, heroHeight * 0.45], extrapolate: 'clamp' });
+  const heroOpacity = scrollY.interpolate({ inputRange: [0, heroHeight * 0.75], outputRange: [1, 0], extrapolate: 'clamp' });
+  const heroScale = scrollY.interpolate({ inputRange: [-200, 0, heroHeight], outputRange: [1.25, 1, 0.92], extrapolate: 'clamp' });
 
   return (
-    <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={{ paddingBottom: 40 }} contentInsetAdjustmentBehavior="never">
-      <View style={[styles.hero, { paddingTop: insets.top + 16 }]}>
+    <View style={{ flex: 1, backgroundColor: t.bg }}>
+      {/* Hero sits behind the scroll content; the sheet slides up over it. */}
+      <View style={[styles.heroBg, { height: heroHeight + 40 }]} />
+      <View style={styles.heroOverscroll} />
+      <Animated.View
+        style={[
+          styles.hero,
+          { height: heroHeight, paddingTop: insets.top + 16, opacity: heroOpacity, transform: [{ translateY: heroTranslate }, { scale: heroScale }] },
+        ]}
+      >
         <View style={styles.logoCard}>
           <Image source={logo} style={styles.logo} resizeMode="contain" accessibilityLabel="Crazy Mountain 100 logo" />
         </View>
@@ -47,9 +62,18 @@ export default function HomeScreen() {
         <Text style={styles.heroSub}>
           {RACE.start.split(',')[0]} → {RACE.finish.split(',')[0]}
         </Text>
-      </View>
+      </Animated.View>
 
-      <View style={styles.body}>
+      <Animated.ScrollView
+        style={StyleSheet.absoluteFill}
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        contentInsetAdjustmentBehavior="never"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ height: heroHeight - 36 }} />
+        <View style={[styles.sheet, { backgroundColor: t.bg }]}>
+          <View style={[styles.grabber, { backgroundColor: t.border }]} />
         <View style={[styles.countdown, { backgroundColor: t.card, borderColor: t.border }]}>
           <Text style={[styles.countBig, { color: t.accent }]}>{c.big}</Text>
           <Text style={[styles.countSmall, { color: t.muted }]}>{c.small}</Text>
@@ -115,18 +139,33 @@ export default function HomeScreen() {
         <Text style={[styles.disclaimer, { color: t.muted }]}>
           Companion app for the Crazy Mountain 100. Details are subject to change, so always confirm with the race website.
         </Text>
-      </View>
-    </ScrollView>
+        </View>
+      </Animated.ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: { backgroundColor: BRAND_BLUE, alignItems: 'center', paddingBottom: 56, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
+  heroBg: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: BRAND_BLUE },
+  heroOverscroll: { position: 'absolute', top: -800, left: 0, right: 0, height: 800, backgroundColor: BRAND_BLUE },
+  hero: { position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center' },
+  sheet: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 60,
+    minHeight: 900,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -4 },
+  },
+  grabber: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, marginBottom: 14 },
   logoCard: { backgroundColor: '#ffffff', borderRadius: 20, paddingHorizontal: 8, paddingVertical: 4 },
   logo: { width: 250, height: 122 },
   heroDate: { color: '#ffffff', fontSize: 20, fontWeight: '800', marginTop: 16 },
   heroSub: { color: '#bcd6e6', fontSize: 14, fontWeight: '600', marginTop: 4 },
-  body: { paddingHorizontal: 16, marginTop: -34 },
   countdown: { borderRadius: 18, borderWidth: 1, paddingVertical: 14, alignItems: 'center' },
   countBig: { fontSize: 40, fontWeight: '900', lineHeight: 46 },
   countSmall: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase' },
