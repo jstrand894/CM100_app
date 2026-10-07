@@ -24,6 +24,8 @@ const TILES: { label: string; sub: string; icon: keyof typeof Ionicons.glyphMap;
   { label: 'Aid stations', sub: 'Cutoffs and crew access', icon: 'location', href: '/aid' },
   { label: 'Live tracking', sub: 'Follow your runner', icon: 'radio', href: '/track' },
   { label: 'Race weekend', sub: 'Schedule and shuttle', icon: 'calendar', href: '/info/schedule' },
+  { label: 'Pace planner', sub: 'When will they arrive?', icon: 'timer', href: '/planner' },
+  { label: 'Elevation', sub: 'Profile and climbing', icon: 'trending-up', href: '/elevation' },
 ];
 
 const STATS = [

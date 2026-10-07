@@ -19,6 +19,8 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="aid/[id]" options={{ title: 'Aid station' }} />
         <Stack.Screen name="info/[slug]" options={{ title: '' }} />
+        <Stack.Screen name="planner" options={{ title: 'Pace planner' }} />
+        <Stack.Screen name="elevation" options={{ title: 'Elevation' }} />
       </Stack>
     </>
   );
