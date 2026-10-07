@@ -1,19 +1,31 @@
 import { useMemo, useState } from 'react';
 import { GestureResponderEvent, LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { AidStation } from '../data/aidStations';
 import elevation from '../data/elevation.json';
 import { useTheme } from '../theme';
 
-const HEIGHT = 230;
-const PAD = { left: 44, right: 12, top: 14, bottom: 26 };
 
 // Chart x-axis uses race-official miles (100 total), scaled from GPX distance.
 const SCALE = 100 / elevation.gpxMiles;
 const PROFILE = (elevation.profile as number[][]).map(([mi, ft]) => ({ mile: mi * SCALE, ft }));
 
-export function ElevationChart({ stations }: { stations: AidStation[] }) {
+interface Props {
+  stations: AidStation[];
+  height?: number;
+  /** Station to highlight (e.g. the one being viewed in a list). */
+  activeStationId?: string | null;
+  /** When set, touching the chart selects the nearest station instead of showing a free readout. */
+  onSelectStation?: (id: string) => void;
+}
+
+const shortName = (n: string) => n.replace(/^(Start|Finish): /, '').replace(/ \((first|second) visit\)/, ' ($1)');
+
+export function ElevationChart({ stations, height = 230, activeStationId = null, onSelectStation }: Props) {
   const t = useTheme();
+  const HEIGHT = height;
+  const selectable = !!onSelectStation;
+  const PAD = { left: 40, right: 12, top: selectable ? 32 : 14, bottom: 24 };
   const [width, setWidth] = useState(0);
   const [probe, setProbe] = useState<number | null>(null); // mile
 
@@ -39,20 +51,22 @@ export function ElevationChart({ stations }: { stations: AidStation[] }) {
     return a.ft + (b.ft - a.ft) * w;
   };
 
+  const nearest = (mile: number) => stations.reduce((b, s) => (Math.abs(s.mile - mile) < Math.abs(b.mile - mile) ? s : b), stations[0]);
   const onTouch = (e: GestureResponderEvent) => {
-    const mile = ((e.nativeEvent.locationX - PAD.left) / plotW) * 100;
-    setProbe(Math.min(Math.max(mile, 0), 100));
+    const mile = Math.min(Math.max(((e.nativeEvent.locationX - PAD.left) / plotW) * 100, 0), 100);
+    if (onSelectStation) onSelectStation(nearest(mile).id);
+    else setProbe(mile);
   };
 
   const yTicks: number[] = [];
   for (let v = yMin; v <= yMax; v += 1000) yTicks.push(v);
   const xTicks = [0, 20, 40, 60, 80, 100];
   const near = probe == null ? null : stations.find((s) => Math.abs(s.mile - probe) < 1.2);
-  const aid = stations.filter((s) => s.kind !== 'cutoff');
+  const active = stations.find((s) => s.id === activeStationId) ?? null;
 
   return (
     <View onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}>
-      <View style={styles.readout}>
+      {!selectable && <View style={styles.readout}>
         {probe == null ? (
           <Text style={[styles.readText, { color: t.muted }]}>Touch and drag the chart to read elevation</Text>
         ) : (
@@ -60,9 +74,9 @@ export function ElevationChart({ stations }: { stations: AidStation[] }) {
             Mile {probe.toFixed(1)} · {Math.round(elevAt(probe)).toLocaleString()} ft{near ? ` · ${near.name}` : ''}
           </Text>
         )}
-      </View>
+      </View>}
       {width > 0 && (
-        <View onStartShouldSetResponder={() => true} onMoveShouldSetResponder={() => true} onResponderGrant={onTouch} onResponderMove={onTouch} onResponderRelease={() => setProbe(null)}>
+        <View onStartShouldSetResponder={() => true} onMoveShouldSetResponder={() => true} onResponderGrant={onTouch} onResponderMove={onTouch} onResponderRelease={() => !selectable && setProbe(null)}>
           <Svg width={width} height={HEIGHT}>
             <Defs>
               <LinearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
@@ -85,9 +99,35 @@ export function ElevationChart({ stations }: { stations: AidStation[] }) {
             ))}
             <Path d={area} fill="url(#fill)" />
             <Path d={line} stroke={t.accent} strokeWidth={2} fill="none" strokeLinejoin="round" />
-            {aid.map((s) => (
-              <Circle key={s.id} cx={x(s.mile)} cy={y(elevAt(s.mile))} r={4} fill={t.card} stroke={t.primary} strokeWidth={2} />
+            {stations.map((st) => (
+              <Circle
+                key={st.id}
+                cx={x(st.mile)}
+                cy={y(elevAt(st.mile))}
+                r={st.id === activeStationId ? 0 : 3.5}
+                fill={t.card}
+                stroke={st.kind === 'cutoff' ? t.amber : t.primary}
+                strokeWidth={2}
+              />
             ))}
+            {active && (() => {
+              const ax = x(active.mile);
+              const ay = y(elevAt(active.mile));
+              const label = `${shortName(active.name)} · mi ${active.mile}`;
+              const w = label.length * 6.6 + 18;
+              const lx = Math.min(Math.max(ax - w / 2, PAD.left - 30), width - PAD.right - w);
+              return (
+                <G>
+                  <Line x1={ax} x2={ax} y1={PAD.top - 4} y2={y(yMin)} stroke={t.accent} strokeWidth={1.5} strokeDasharray="4 3" />
+                  <Rect x={lx} y={4} width={w} height={22} rx={11} fill={t.accent} />
+                  <SvgText x={lx + w / 2} y={19} fontSize={12} fontWeight="700" fill={t.accentText} textAnchor="middle">
+                    {label}
+                  </SvgText>
+                  <Circle cx={ax} cy={ay} r={9} fill={t.accent} opacity={0.25} />
+                  <Circle cx={ax} cy={ay} r={5.5} fill={t.accent} stroke="#ffffff" strokeWidth={2} />
+                </G>
+              );
+            })()}
             {probe != null && (
               <G>
                 <Line x1={x(probe)} x2={x(probe)} y1={PAD.top} y2={y(yMin)} stroke={t.primary} strokeWidth={1.5} />
@@ -97,7 +137,7 @@ export function ElevationChart({ stations }: { stations: AidStation[] }) {
           </Svg>
         </View>
       )}
-      <Text style={[styles.axis, { color: t.muted }]}>Miles</Text>
+      {!selectable && <Text style={[styles.axis, { color: t.muted }]}>Miles</Text>}
     </View>
   );
 }

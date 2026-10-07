@@ -21,7 +21,7 @@ function countdown(): { big: string; small: string } {
 
 const TILES: { label: string; sub: string; icon: keyof typeof Ionicons.glyphMap; href: Href }[] = [
   { label: 'Course map', sub: '99.4 mi, download GPX', icon: 'map', href: '/map' },
-  { label: 'Aid stations', sub: 'Cutoffs and crew access', icon: 'location', href: '/aid' },
+  { label: 'Aid stations', sub: 'Profile, cutoffs, crew access', icon: 'location', href: '/course' },
   { label: 'Live tracking', sub: 'Follow your runner', icon: 'radio', href: '/track' },
   { label: 'Race weekend', sub: 'Schedule and shuttle', icon: 'calendar', href: '/info/schedule' },
   { label: 'Pace planner', sub: 'When will they arrive?', icon: 'timer', href: '/planner' },
