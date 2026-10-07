@@ -346,7 +346,7 @@ export default function CourseScreen() {
         })}
       </ScrollView>
       {/* Fixed selection frame: the list scrolls underneath it, so it never slides away with a row. */}
-      <Animated.View pointerEvents="none" style={[styles.frame, { height: frameH, transform: [{ scale: SELECTED_SCALE }], borderColor: t.accent, backgroundColor: tint(t.accent, 0.08) }]} />
+      <Animated.View pointerEvents="none" style={[styles.frame, { height: frameH, transform: [{ scale: SELECTED_SCALE }], borderColor: t.accent, backgroundColor: tint(t.accent, 0.04) }]} />
       </View>
     </View>
   );
