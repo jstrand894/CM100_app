@@ -3,12 +3,17 @@ import { GestureResponderEvent, LayoutChangeEvent, StyleSheet, Text, View } from
 import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { AidStation } from '../data/aidStations';
 import elevation from '../data/elevation.json';
-import { useTheme } from '../theme';
+import { BRAND_BLUE, useTheme } from '../theme';
 
 
 // Chart x-axis uses race-official miles (100 total), scaled from GPX distance.
 const SCALE = 100 / elevation.gpxMiles;
-const PROFILE = (elevation.profile as number[][]).map(([mi, ft]) => ({ mile: mi * SCALE, ft }));
+const RAW = (elevation.profile as number[][]).map(([mi, ft]) => ({ mile: mi * SCALE, ft }));
+// Light 3-point smoothing so the line reads cleanly without flattening the peaks.
+const PROFILE = RAW.map((p, i) => {
+  const a = RAW[Math.max(i - 1, 0)].ft, b = RAW[Math.min(i + 1, RAW.length - 1)].ft;
+  return { mile: p.mile, ft: (a + p.ft * 2 + b) / 4 };
+});
 
 interface Props {
   stations: AidStation[];
@@ -17,15 +22,22 @@ interface Props {
   activeStationId?: string | null;
   /** When set, touching the chart selects the nearest station instead of showing a free readout. */
   onSelectStation?: (id: string) => void;
+  /** 'dark' draws light-on-dark for use directly on the blue header. */
+  tone?: 'light' | 'dark';
 }
 
 const shortName = (n: string) => n.replace(/^(Start|Finish): /, '').replace(/ \((first|second) visit\)/, ' ($1)');
 
-export function ElevationChart({ stations, height = 230, activeStationId = null, onSelectStation }: Props) {
-  const t = useTheme();
+export function ElevationChart({ stations, height = 230, activeStationId = null, onSelectStation, tone = 'light' }: Props) {
+  const theme = useTheme();
+  const dark = tone === 'dark';
+  // On the blue header the chart uses its own light-on-dark palette.
+  const t = dark
+    ? { ...theme, accent: '#ff8a3d', border: 'rgba(255,255,255,0.14)', muted: 'rgba(255,255,255,0.7)', card: BRAND_BLUE, primary: '#ffffff', text: '#ffffff' }
+    : theme;
   const HEIGHT = height;
   const selectable = !!onSelectStation;
-  const PAD = { left: 40, right: 12, top: selectable ? 32 : 14, bottom: 24 };
+  const PAD = { left: selectable ? 48 : 40, right: selectable ? 18 : 12, top: selectable ? 32 : 14, bottom: 24 };
   const [width, setWidth] = useState(0);
   const [probe, setProbe] = useState<number | null>(null); // mile
 
@@ -59,8 +71,9 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
   };
 
   const yTicks: number[] = [];
-  for (let v = yMin; v <= yMax; v += 1000) yTicks.push(v);
-  const xTicks = [0, 20, 40, 60, 80, 100];
+  if (selectable) [6000, 8000, 10000].forEach((v) => v >= yMin && v <= yMax && yTicks.push(v));
+  else for (let v = yMin; v <= yMax; v += 1000) yTicks.push(v);
+  const xTicks = selectable ? [0, 25, 50, 75, 100] : [0, 20, 40, 60, 80, 100];
   const near = probe == null ? null : stations.find((s) => Math.abs(s.mile - probe) < 1.2);
   const active = stations.find((s) => s.id === activeStationId) ?? null;
 
@@ -80,15 +93,15 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
           <Svg width={width} height={HEIGHT}>
             <Defs>
               <LinearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={t.accent} stopOpacity={0.55} />
-                <Stop offset="1" stopColor={t.accent} stopOpacity={0.05} />
+                <Stop offset="0" stopColor={dark ? '#ffffff' : t.accent} stopOpacity={dark ? 0.28 : 0.55} />
+                <Stop offset="1" stopColor={dark ? '#ffffff' : t.accent} stopOpacity={0} />
               </LinearGradient>
             </Defs>
             {yTicks.map((v) => (
               <G key={v}>
-                <Line x1={PAD.left} x2={width - PAD.right} y1={y(v)} y2={y(v)} stroke={t.border} strokeWidth={1} />
-                <SvgText x={PAD.left - 6} y={y(v) + 4} fontSize={10} fill={t.muted} textAnchor="end">
-                  {v / 1000}k
+                <Line x1={PAD.left} x2={width - PAD.right} y1={y(v)} y2={y(v)} stroke={t.border} strokeWidth={1} strokeDasharray={selectable ? '2 4' : undefined} />
+                <SvgText x={PAD.left - 8} y={y(v) + 3.5} fontSize={10} fill={t.muted} textAnchor="end">
+                  {`${v / 1000}k`}
                 </SvgText>
               </G>
             ))}
@@ -98,16 +111,16 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
               </SvgText>
             ))}
             <Path d={area} fill="url(#fill)" />
-            <Path d={line} stroke={t.accent} strokeWidth={2} fill="none" strokeLinejoin="round" />
+            <Path d={line} stroke={t.accent} strokeWidth={selectable ? 2.5 : 2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
             {stations.map((st) => (
               <Circle
                 key={st.id}
                 cx={x(st.mile)}
                 cy={y(elevAt(st.mile))}
-                r={st.id === activeStationId ? 0 : 3.5}
-                fill={t.card}
-                stroke={st.kind === 'cutoff' ? t.amber : t.primary}
-                strokeWidth={2}
+                r={st.id === activeStationId ? 0 : selectable ? 3 : 3.5}
+                fill={dark ? BRAND_BLUE : t.card}
+                stroke={st.kind === 'cutoff' ? t.amber : dark ? '#ffffff' : t.primary}
+                strokeWidth={selectable ? 1.75 : 2}
               />
             ))}
             {active && (() => {
@@ -118,13 +131,13 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
               const lx = Math.min(Math.max(ax - w / 2, PAD.left - 30), width - PAD.right - w);
               return (
                 <G>
-                  <Line x1={ax} x2={ax} y1={PAD.top - 4} y2={y(yMin)} stroke={t.accent} strokeWidth={1.5} strokeDasharray="4 3" />
-                  <Rect x={lx} y={4} width={w} height={22} rx={11} fill={t.accent} />
-                  <SvgText x={lx + w / 2} y={19} fontSize={12} fontWeight="700" fill={t.accentText} textAnchor="middle">
+                  <Line x1={ax} x2={ax} y1={PAD.top - 4} y2={y(yMin)} stroke={dark ? '#ffffff' : t.accent} strokeOpacity={dark ? 0.55 : 1} strokeWidth={1.25} strokeDasharray="3 3" />
+                  <Rect x={lx} y={4} width={w} height={22} rx={11} fill={dark ? '#ffffff' : t.accent} />
+                  <SvgText x={lx + w / 2} y={19} fontSize={12} fontWeight="700" fill={dark ? BRAND_BLUE : theme.accentText} textAnchor="middle">
                     {label}
                   </SvgText>
-                  <Circle cx={ax} cy={ay} r={9} fill={t.accent} opacity={0.25} />
-                  <Circle cx={ax} cy={ay} r={5.5} fill={t.accent} stroke="#ffffff" strokeWidth={2} />
+                  <Circle cx={ax} cy={ay} r={11} fill={t.accent} opacity={0.22} />
+                  <Circle cx={ax} cy={ay} r={6} fill={t.accent} stroke="#ffffff" strokeWidth={2.5} />
                 </G>
               );
             })()}

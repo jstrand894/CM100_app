@@ -66,8 +66,8 @@ export default function CourseScreen() {
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <Text style={styles.title}>Course</Text>
         <Text style={styles.sub}>Scroll the stations or drag the profile</Text>
-        <View style={[styles.chart, { backgroundColor: t.card }]}>
-          <ElevationChart stations={AID_STATIONS} height={170} activeStationId={activeId} onSelectStation={jumpTo} />
+        <View style={styles.chart}>
+          <ElevationChart stations={AID_STATIONS} height={185} activeStationId={activeId} onSelectStation={jumpTo} tone="dark" />
         </View>
       </View>
 
@@ -123,10 +123,10 @@ export default function CourseScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { backgroundColor: BRAND_BLUE, paddingHorizontal: 12, paddingBottom: 12, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+  header: { backgroundColor: BRAND_BLUE, paddingHorizontal: 12, paddingBottom: 10, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   title: { color: '#ffffff', fontSize: 26, fontWeight: '800', marginLeft: 8 },
   sub: { color: '#bcd6e6', fontSize: 13, fontWeight: '600', marginLeft: 8, marginTop: 2, marginBottom: 10 },
-  chart: { borderRadius: 18, overflow: 'hidden', paddingHorizontal: 4, paddingBottom: 4 },
+  chart: { marginHorizontal: -4 },
   content: { padding: 16, paddingTop: 14, gap: 10, paddingBottom: 60 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 18, gap: 12 },
   badge: { width: 58, height: 58, borderRadius: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
