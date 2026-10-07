@@ -29,11 +29,13 @@ interface Props {
   viewSpan?: number;
   /** Animated mile for the highlight marker so it can glide between stations. */
   activeMile?: number;
+  /** Small decorative version: no axes, readout or touch handling. */
+  compact?: boolean;
 }
 
 const shortName = (n: string) => n.replace(/^(Start|Finish): /, '').replace(/ \((first|second) visit\)/, ' ($1)');
 
-export function ElevationChart({ stations, height = 230, activeStationId = null, onSelectStation, tone = 'light', viewStart = 0, viewSpan = 100, activeMile }: Props) {
+export function ElevationChart({ stations, height = 230, activeStationId = null, onSelectStation, tone = 'light', viewStart = 0, viewSpan = 100, activeMile, compact = false }: Props) {
   const theme = useTheme();
   const dark = tone === 'dark';
   // On the blue header the chart uses its own light-on-dark palette.
@@ -42,7 +44,9 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
     : theme;
   const HEIGHT = height;
   const selectable = !!onSelectStation;
-  const PAD = { left: selectable ? 48 : 40, right: selectable ? 18 : 12, top: selectable ? 32 : 14, bottom: 24 };
+  const PAD = compact
+    ? { left: 8, right: 8, top: 8, bottom: 6 }
+    : { left: selectable ? 48 : 40, right: selectable ? 18 : 12, top: selectable ? 32 : 14, bottom: 24 };
   const [width, setWidth] = useState(0);
   const [probe, setProbe] = useState<number | null>(null); // mile
 
@@ -100,17 +104,17 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
   };
 
   const yTicks: number[] = [];
-  if (selectable) [6000, 8000, 10000].forEach((v) => v >= yMin && v <= yMax && yTicks.push(v));
-  else for (let v = yMin; v <= yMax; v += 1000) yTicks.push(v);
+  if (!compact && selectable) [6000, 8000, 10000].forEach((v) => v >= yMin && v <= yMax && yTicks.push(v));
+  else if (!compact) for (let v = yMin; v <= yMax; v += 1000) yTicks.push(v);
   const tickStep = viewSpan > 70 ? (selectable ? 25 : 20) : viewSpan > 30 ? 10 : 5;
   const xTicks: number[] = [];
-  for (let m = Math.ceil(viewStart / tickStep) * tickStep; m <= viewStart + viewSpan + 0.001; m += tickStep) xTicks.push(m);
+  if (!compact) for (let m = Math.ceil(viewStart / tickStep) * tickStep; m <= viewStart + viewSpan + 0.001; m += tickStep) xTicks.push(m);
   const near = probe == null ? null : stations.find((s) => Math.abs(s.mile - probe) < 1.2);
   const active = stations.find((s) => s.id === activeStationId) ?? null;
 
   return (
     <View onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}>
-      {!selectable && <View style={styles.readout}>
+      {!selectable && !compact && <View style={styles.readout}>
         {probe == null ? (
           <Text style={[styles.readText, { color: t.muted }]}>Touch and drag the chart to read elevation</Text>
         ) : (
@@ -120,7 +124,7 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
         )}
       </View>}
       {width > 0 && (
-        <View onStartShouldSetResponder={() => true} onMoveShouldSetResponder={() => true} onResponderGrant={onGrant} onResponderMove={onMove} onResponderRelease={onRelease} onResponderTerminate={() => (touch.current = null)}>
+        <View pointerEvents={compact ? 'none' : 'auto'} onStartShouldSetResponder={() => !compact} onMoveShouldSetResponder={() => true} onResponderGrant={onGrant} onResponderMove={onMove} onResponderRelease={onRelease} onResponderTerminate={() => (touch.current = null)}>
           <Svg width={width} height={HEIGHT}>
             <Defs>
               <LinearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
@@ -148,7 +152,7 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
               <Path d={area} fill="url(#fill)" />
               <Path d={line} stroke={t.accent} strokeWidth={selectable ? 2.5 : 2} fill="none" strokeLinejoin="round" strokeLinecap="round" />
             </G>
-            {stations.filter((st) => inView(st.mile)).map((st) => (
+            {stations.filter((st) => inView(st.mile)).map((st) => compact ? null : (
               <Circle
                 key={st.id}
                 cx={x(st.mile)}
@@ -187,7 +191,7 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
           </Svg>
         </View>
       )}
-      {!selectable && <Text style={[styles.axis, { color: t.muted }]}>Miles</Text>}
+      {!selectable && !compact && <Text style={[styles.axis, { color: t.muted }]}>Miles</Text>}
     </View>
   );
 }
