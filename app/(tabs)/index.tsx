@@ -3,8 +3,6 @@ import { Href, router } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Animated, Image, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ElevationChart } from '../../src/components/ElevationChart';
-import { AID_STATIONS } from '../../src/data/aidStations';
 import { LOTTERY } from '../../src/data/lottery';
 import { agoLabel, formatPostDate, useNews } from '../../src/data/news';
 import { HIGHLIGHTS, RACE } from '../../src/data/race';
@@ -145,21 +143,6 @@ export default function HomeScreen() {
           </Pressable>
         )}
 
-        <Pressable
-          onPress={() => router.push('/course')}
-          accessibilityLabel="Open the course profile"
-          style={({ pressed }) => [styles.profile, { backgroundColor: BRAND_BLUE }, pressed && { opacity: 0.85 }]}
-        >
-          <View style={styles.profileTop}>
-            <View>
-              <Text style={styles.profileTitle}>Course profile</Text>
-              <Text style={styles.profileSub}>100 mi · 23,008 ft of climbing</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#bcd6e6" />
-          </View>
-          <ElevationChart stations={AID_STATIONS} height={78} tone="dark" compact />
-        </Pressable>
-
         <View style={styles.grid}>
           {TILES.map((tile) => (
             <Pressable
@@ -241,10 +224,6 @@ const styles = StyleSheet.create({
   newsTitle: { fontSize: 17, fontWeight: '800', lineHeight: 22 },
   newsBody: { fontSize: 14, lineHeight: 20, marginTop: 4 },
   newsFoot: { fontSize: 12, fontWeight: '600', marginTop: 8 },
-  profile: { borderRadius: 18, marginTop: 14, paddingTop: 12, paddingBottom: 6, overflow: 'hidden' },
-  profileTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
-  profileTitle: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
-  profileSub: { color: '#bcd6e6', fontSize: 12, fontWeight: '600', marginTop: 1 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 14 },
   tile: { width: '48%', flexGrow: 1, borderRadius: 18, borderWidth: 1, padding: 14 },
   tileIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
