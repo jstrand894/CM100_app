@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ElevationChart } from '../../src/components/ElevationChart';
 import { AID_STATIONS } from '../../src/data/aidStations';
 import { LOTTERY } from '../../src/data/lottery';
+import { agoLabel, formatPostDate, useNews } from '../../src/data/news';
 import { HIGHLIGHTS, RACE } from '../../src/data/race';
 import { BRAND_BLUE, useTheme } from '../../src/theme';
 
@@ -52,6 +53,8 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const c = countdown();
   const lottery = lotteryLine();
+  const news = useNews();
+  const latest = news.posts[0];
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const heroHeight = insets.top + 250;
@@ -98,6 +101,41 @@ export default function HomeScreen() {
             </Pressable>
           )}
         </View>
+
+        {(latest || news.configured || news.isSample) && (
+          <Pressable
+            onPress={() => router.push('/news')}
+            accessibilityLabel="Open race news"
+            style={({ pressed }) => [styles.news, { backgroundColor: t.card, borderColor: latest?.urgent ? t.accent : t.border, borderWidth: latest?.urgent ? 2 : 1 }, pressed && { opacity: 0.85 }]}
+          >
+            <View style={styles.newsTop}>
+              <View style={[styles.newsIcon, { backgroundColor: t.accentSoft }]}>
+                <Ionicons name="megaphone" size={18} color={t.accent} />
+              </View>
+              <Text style={[styles.newsKicker, { color: t.muted }]}>LATEST FROM THE RACE DIRECTOR</Text>
+              {news.unread > 0 && (
+                <View style={[styles.badge, { backgroundColor: t.accent }]}>
+                  <Text style={styles.badgeText}>{news.unread} new</Text>
+                </View>
+              )}
+            </View>
+            {latest ? (
+              <>
+                <Text style={[styles.newsTitle, { color: t.text }]} numberOfLines={2}>
+                  {latest.title}
+                </Text>
+                {latest.body !== '' && (
+                  <Text style={[styles.newsBody, { color: t.muted }]} numberOfLines={2}>
+                    {latest.body}
+                  </Text>
+                )}
+                <Text style={[styles.newsFoot, { color: t.muted }]}>{`${formatPostDate(latest.date)} · updated ${agoLabel(news.updatedAt)} · all news`}</Text>
+              </>
+            ) : (
+              <Text style={[styles.newsBody, { color: t.muted }]}>No news yet. Tap to check for updates.</Text>
+            )}
+          </Pressable>
+        )}
 
         <Pressable
           onPress={() => router.push('/course')}
@@ -186,6 +224,15 @@ const styles = StyleSheet.create({
   lotteryPill: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 },
   lotteryText: { fontSize: 13, fontWeight: '800' },
   countSmall: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase' },
+  news: { borderRadius: 18, padding: 14, marginTop: 14 },
+  newsTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  newsIcon: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  newsKicker: { flex: 1, fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
+  badge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 10 },
+  badgeText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
+  newsTitle: { fontSize: 17, fontWeight: '800', lineHeight: 22 },
+  newsBody: { fontSize: 14, lineHeight: 20, marginTop: 4 },
+  newsFoot: { fontSize: 12, fontWeight: '600', marginTop: 8 },
   profile: { borderRadius: 18, marginTop: 14, paddingTop: 12, paddingBottom: 6, overflow: 'hidden' },
   profileTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   profileTitle: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
