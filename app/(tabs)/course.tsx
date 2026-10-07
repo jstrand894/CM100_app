@@ -128,19 +128,19 @@ const ZoomChart = memo(function ZoomChart({
   center: Animated.Value;
   progress: Animated.Value;
 }) {
-  const [view, setView] = useState({ start: 0, span: ZOOM_SPAN });
+  const [view, setView] = useState({ start: 0, span: ZOOM_SPAN, mile: AID_STATIONS[0].mile });
   useEffect(() => {
     let c = AID_STATIONS[0].mile, p = 0;
     const apply = () => {
       const span = ZOOM_SPAN + (100 - ZOOM_SPAN) * p;
       const start = Math.min(Math.max(c - span / 2, 0), 100 - span);
-      setView((v) => (Math.abs(v.start - start) < 0.02 && Math.abs(v.span - span) < 0.02 ? v : { start, span }));
+      setView((v) => (Math.abs(v.start - start) < 0.01 && Math.abs(v.span - span) < 0.01 && Math.abs(v.mile - c) < 0.01 ? v : { start, span, mile: c }));
     };
     const a = center.addListener(({ value }) => { c = value; apply(); });
     const b = progress.addListener(({ value }) => { p = value; apply(); });
     return () => { center.removeListener(a); progress.removeListener(b); };
   }, [center, progress]);
-  return <ElevationChart stations={AID_STATIONS} height={185} activeStationId={activeId} onSelectStation={onSelect} tone="dark" viewStart={view.start} viewSpan={view.span} />;
+  return <ElevationChart stations={AID_STATIONS} height={185} activeStationId={activeId} onSelectStation={onSelect} tone="dark" viewStart={view.start} viewSpan={view.span} activeMile={view.mile} />;
 });
 
 export default function CourseScreen() {

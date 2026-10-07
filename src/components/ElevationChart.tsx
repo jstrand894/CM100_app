@@ -27,11 +27,13 @@ interface Props {
   /** Visible window in miles (default: the whole course). Lets the chart zoom and pan along the route. */
   viewStart?: number;
   viewSpan?: number;
+  /** Animated mile for the highlight marker so it can glide between stations. */
+  activeMile?: number;
 }
 
 const shortName = (n: string) => n.replace(/^(Start|Finish): /, '').replace(/ \((first|second) visit\)/, ' ($1)');
 
-export function ElevationChart({ stations, height = 230, activeStationId = null, onSelectStation, tone = 'light', viewStart = 0, viewSpan = 100 }: Props) {
+export function ElevationChart({ stations, height = 230, activeStationId = null, onSelectStation, tone = 'light', viewStart = 0, viewSpan = 100, activeMile }: Props) {
   const theme = useTheme();
   const dark = tone === 'dark';
   // On the blue header the chart uses its own light-on-dark palette.
@@ -158,8 +160,9 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
               />
             ))}
             {active && (() => {
-              const ax = x(active.mile);
-              const ay = y(elevAt(active.mile));
+              const mileAt = activeMile ?? active.mile;
+              const ax = x(mileAt);
+              const ay = y(elevAt(mileAt));
               const label = `${shortName(active.name)} · mi ${active.mile}`;
               const w = label.length * 6.6 + 18;
               const lx = Math.min(Math.max(ax - w / 2, PAD.left - 30), width - PAD.right - w);
