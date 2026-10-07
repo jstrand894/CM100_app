@@ -221,6 +221,17 @@ export default function CourseScreen() {
     scrollRef.current?.scrollTo({ y: Math.max(r.y - SLOT, 0), animated: true });
   }, []);
 
+  const cardH = useRef<Record<string, number>>({});
+  const frameH = useRef(new Animated.Value(96)).current;
+  const sizeFrame = useCallback(
+    (id: string) => {
+      const h = cardH.current[id];
+      if (h) Animated.timing(frameH, { toValue: h, duration: 180, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    },
+    [frameH],
+  );
+  useEffect(() => sizeFrame(activeId), [activeId, sizeFrame]);
+
   const onRowLayout = (id: string) => (e: LayoutChangeEvent) => {
     rows.current[id] = { y: e.nativeEvent.layout.y, h: e.nativeEvent.layout.height };
     recompute();
@@ -244,6 +255,7 @@ export default function CourseScreen() {
         </Pressable>
       </View>
 
+      <View style={{ flex: 1 }}>
       <ScrollView
         ref={scrollRef}
         onScroll={onScroll}
@@ -260,14 +272,17 @@ export default function CourseScreen() {
       >
         {AID_STATIONS.map((item, idx) => {
           const kc = badgeColor(item, t);
-          const on = item.id === activeId;
           return (
             <View key={item.id} onLayout={onRowLayout(item.id)}>
               <Link href={{ pathname: '/aid/[id]', params: { id: item.id } }} asChild>
                 <Pressable
+                  onLayout={(e) => {
+                    cardH.current[item.id] = e.nativeEvent.layout.height;
+                    if (item.id === activeId) sizeFrame(item.id);
+                  }}
                   style={StyleSheet.flatten([
                     styles.row,
-                    { backgroundColor: on ? tint(t.accent, 0.1) : t.card, borderColor: on ? t.accent : t.border, borderWidth: on ? 2 : 1 },
+                    { backgroundColor: t.card, borderColor: t.border, borderWidth: 1 },
                   ])}
                 >
                   <View style={[styles.badge, { backgroundColor: tint(kc, 0.16) }]}>
@@ -313,6 +328,9 @@ export default function CourseScreen() {
           );
         })}
       </ScrollView>
+      {/* Fixed selection frame: the list scrolls underneath it, so it never slides away with a row. */}
+      <Animated.View pointerEvents="none" style={[styles.frame, { height: frameH, borderColor: t.accent, backgroundColor: tint(t.accent, 0.08) }]} />
+      </View>
     </View>
   );
 }
@@ -323,6 +341,7 @@ const styles = StyleSheet.create({
   sub: { color: '#bcd6e6', fontSize: 13, fontWeight: '600', marginLeft: 8, marginTop: 2, marginBottom: 10 },
   chart: { marginHorizontal: -4 },
   content: { padding: 16, paddingTop: 12 },
+  frame: { position: 'absolute', top: 12, left: 16, right: 16, borderRadius: 18, borderWidth: 2.5 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 18, gap: 12 },
   badge: { width: 58, height: 58, borderRadius: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   badgeNum: { fontSize: 19, fontWeight: '900' },

@@ -1,10 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { ColorValue } from 'react-native';
 import { useTheme } from '../../src/theme';
 
 const icon = (name: keyof typeof Ionicons.glyphMap) =>
   ({ color, size }: { color: ColorValue; size: number }) => <Ionicons name={name} size={size} color={color} />;
+
+const mciIcon = (name: keyof typeof MaterialCommunityIcons.glyphMap) =>
+  ({ color, size }: { color: ColorValue; size: number }) => <MaterialCommunityIcons name={name} size={size + 2} color={color} />;
 
 export default function TabLayout() {
   const t = useTheme();
@@ -20,7 +23,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Home', headerShown: false, tabBarIcon: icon('home') }} />
-      <Tabs.Screen name="course" options={{ title: 'Course', headerShown: false, tabBarIcon: icon('trail-sign') }} />
+      <Tabs.Screen name="course" options={{ title: 'Course', headerShown: false, tabBarIcon: mciIcon('chart-areaspline') }} />
       <Tabs.Screen name="map" options={{ title: 'Map', headerShown: false, tabBarIcon: icon('map') }} />
       <Tabs.Screen name="lottery" options={{ title: 'Lottery', headerShown: false, tabBarIcon: icon('ticket') }} />
     </Tabs>
