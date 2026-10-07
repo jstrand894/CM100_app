@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Href, router } from 'expo-router';
-import { useRef } from 'react';
-import { Animated, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Animated, Image, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ElevationChart } from '../../src/components/ElevationChart';
 import { AID_STATIONS } from '../../src/data/aidStations';
@@ -55,6 +55,13 @@ export default function HomeScreen() {
   const lottery = lotteryLine();
   const news = useNews();
   const latest = news.posts[0];
+  // Pull down to check for new news. Keep the spinner up briefly even when the check is instant.
+  const [pulling, setPulling] = useState(false);
+  const onPull = useCallback(async () => {
+    setPulling(true);
+    await Promise.all([news.refresh(), new Promise((r) => setTimeout(r, 700))]);
+    setPulling(false);
+  }, [news.refresh]);
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const heroHeight = insets.top + 250;
@@ -64,7 +71,7 @@ export default function HomeScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       {/* Hero sits behind the scroll content; the sheet slides up over it. */}
-      <View style={[styles.heroBg, { height: heroHeight + 40 }]} />
+      <View style={[styles.heroBg, { height: heroHeight + 320 }]} />
       <View style={styles.heroOverscroll} />
       <Animated.View
         style={[
@@ -86,6 +93,7 @@ export default function HomeScreen() {
         scrollEventThrottle={16}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         contentInsetAdjustmentBehavior="never"
+        refreshControl={<RefreshControl refreshing={pulling || news.refreshing} onRefresh={onPull} tintColor="#ffffff" />}
         showsVerticalScrollIndicator={false}
       >
         <View style={{ height: heroHeight - 36 }} />
