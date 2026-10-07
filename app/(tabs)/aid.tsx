@@ -16,9 +16,9 @@ export default function AidStationsScreen() {
       keyExtractor={(s) => s.id}
       renderItem={({ item }) => (
         <Link href={{ pathname: '/aid/[id]', params: { id: item.id } }} asChild>
-          <Pressable style={[styles.row, { backgroundColor: t.card, borderColor: t.border }]}>
+          <Pressable style={StyleSheet.flatten([styles.row, { backgroundColor: t.card, borderColor: t.border }])}>
             <View style={[styles.mile, { borderColor: t.border }]}>
-              <Text style={[styles.mileNum, { color: t.text }]}>{item.mile}</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.mileNum, { color: t.text }]}>{item.mile}</Text>
               <Text style={[styles.mileLabel, { color: t.muted }]}>mi</Text>
             </View>
             <View style={{ flex: 1 }}>
@@ -46,7 +46,7 @@ export default function AidStationsScreen() {
 const styles = StyleSheet.create({
   content: { padding: 16, gap: 10 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, borderWidth: 1, gap: 12 },
-  mile: { width: 52, alignItems: 'center', borderRightWidth: 1, paddingRight: 10 },
+  mile: { width: 64, alignItems: 'center', borderRightWidth: 1, paddingRight: 10 },
   mileNum: { fontSize: 20, fontWeight: '800' },
   mileLabel: { fontSize: 11, fontWeight: '700' },
   name: { fontSize: 17, fontWeight: '700' },

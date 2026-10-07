@@ -64,7 +64,7 @@ export default function MapScreen() {
         showsUserLocation={hasLocation}
         showsCompass
         showsScale
-        onMapReady={fit}
+        onMapReady={() => setTimeout(fit, 400)}
         initialRegion={{
           latitude: (course.bounds.minLat + course.bounds.maxLat) / 2,
           longitude: (course.bounds.minLon + course.bounds.maxLon) / 2,

@@ -34,7 +34,7 @@ export const AID_STATIONS: AidStation[] = [
     gainFt: null,
     lossFt: null,
     dropBags: true,
-    crewAccess: "no",
+    crewAccess: "yes",
     pacerAccess: false,
     cutoff: null,
     driveFromWilsall: "22 min",
