@@ -58,8 +58,12 @@ export default function MapScreen() {
   const [hideDist, setHideDist] = useState(110);
   const hideRef = useRef(110);
   const sheetVal = useRef(0);
+  const [mini, setMini] = useState(false);
   useEffect(() => {
-    const id = sheet.addListener(({ value }) => (sheetVal.current = value));
+    const id = sheet.addListener(({ value }) => {
+      sheetVal.current = value;
+      setMini((m) => (m === value < -0.4 ? m : value < -0.4));
+    });
     return () => sheet.removeListener(id);
   }, [sheet]);
   const goTo = useCallback(
@@ -215,13 +219,15 @@ export default function MapScreen() {
         </Pressable>
         <View style={styles.cardTop}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.cardTitle, { color: t.text }]}>Crazy Mountain 100</Text>
-            <Text style={[styles.cardSub, { color: t.muted }]}>{course.totalMiles} mi · Wilsall to Lennep</Text>
+            <Text style={[styles.cardTitle, { color: t.text }]}>{mini ? 'Tracking & GPX' : 'Crazy Mountain 100'}</Text>
+            <Text style={[styles.cardSub, { color: t.muted }]}>{mini ? 'Swipe up for live tracking and the GPX file' : `${course.totalMiles} mi · Wilsall to Lennep`}</Text>
           </View>
+          {!mini && (
           <Pressable onPress={shareGpx} style={[styles.gpx, { backgroundColor: t.primary }]}>
             <Ionicons name="download-outline" size={16} color="#ffffff" />
             <Text style={styles.gpxText}>GPX</Text>
           </Pressable>
+          )}
         </View>
         <Animated.View style={{ opacity: detailOpacity }}>
         <Pressable onPress={() => goTo(level.current === 1 ? 0 : 1)} style={[styles.trackRow, { backgroundColor: t.primarySoft }]}>
