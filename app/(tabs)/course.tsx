@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,30 +22,65 @@ function Chip({ label, color, icon }: { label: string; color: string; icon?: key
   );
 }
 
+const fmt = (n: number) => n.toLocaleString();
+
+// Connector between two stations: distance, climb and descent for the section leading to `next`.
+function Leg({ from, next }: { from: AidStation; next: AidStation }) {
+  const t = useTheme();
+  const miles = Math.round((next.mile - from.mile) * 10) / 10;
+  return (
+    <View style={styles.leg}>
+      <View style={[styles.legLine, { backgroundColor: t.border }]} />
+      <View style={styles.legBody}>
+        <Text style={[styles.legTo, { color: t.muted }]}>To {next.name.replace(/^Finish: /, '')}</Text>
+        <View style={styles.legChips}>
+          <Chip label={`${miles} mi`} color={t.primary} icon="walk" />
+          {next.gainFt != null && <Chip label={`+${fmt(next.gainFt)} ft`} color={t.red} icon="trending-up" />}
+          {next.lossFt != null && <Chip label={`−${fmt(next.lossFt)} ft`} color={t.green} icon="trending-down" />}
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export default function CourseScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const rows = useRef<Record<string, { y: number; h: number }>>({});
   const viewport = useRef(0);
-  const contentH = useRef(0);
   const lockUntil = useRef(0); // ignore scroll-derived updates briefly after a programmatic jump
   const [activeId, setActiveId] = useState(AID_STATIONS[0].id);
 
-  // The "focus line" slides from the top of the viewport (scrolled to top) to the bottom (scrolled to
-  // the end), so every station, including the first and last, can become active.
+  // The selected station always sits in a fixed slot at the top of the list. Rows snap into that slot,
+  // and extra space below the last row lets the Finish scroll all the way up to it too.
+  const SLOT = 12;
+  const [snaps, setSnaps] = useState<number[]>([]);
+  const [bottomPad, setBottomPad] = useState(300);
+
+  const recompute = useCallback(() => {
+    const measured = AID_STATIONS.map((s) => rows.current[s.id]);
+    if (measured.some((r) => !r)) return;
+    setSnaps(measured.map((r) => Math.max(r!.y - SLOT, 0)));
+    const last = measured[measured.length - 1]!;
+    setBottomPad(Math.max(viewport.current - last.h - SLOT * 2, 24));
+  }, []);
+
   const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (Date.now() < lockUntil.current) return;
-    const y = e.nativeEvent.contentOffset.y;
-    const maxScroll = Math.max(contentH.current - viewport.current, 1);
-    const progress = Math.min(Math.max(y / maxScroll, 0), 1);
-    const focus = y + progress * viewport.current;
-    let found = AID_STATIONS[0].id;
+    const y = e.nativeEvent.contentOffset.y + SLOT;
+    let best = AID_STATIONS[0].id;
+    let bestDist = Infinity;
     for (const s of AID_STATIONS) {
       const r = rows.current[s.id];
-      if (r && focus >= r.y) found = s.id;
+      if (!r) continue;
+      const d = Math.abs(r.y - y);
+      if (d < bestDist) {
+        bestDist = d;
+        best = s.id;
+      }
     }
-    setActiveId((prev) => (prev === found ? prev : found));
+    setActiveId((prev) => (prev === best ? prev : best));
   }, []);
 
   const jumpTo = useCallback((id: string) => {
@@ -53,12 +88,12 @@ export default function CourseScreen() {
     if (!r) return;
     lockUntil.current = Date.now() + 700;
     setActiveId(id);
-    const maxScroll = Math.max(contentH.current - viewport.current, 0);
-    scrollRef.current?.scrollTo({ y: Math.min(Math.max(r.y - 12, 0), maxScroll), animated: true });
+    scrollRef.current?.scrollTo({ y: Math.max(r.y - SLOT, 0), animated: true });
   }, []);
 
   const onRowLayout = (id: string) => (e: LayoutChangeEvent) => {
     rows.current[id] = { y: e.nativeEvent.layout.y, h: e.nativeEvent.layout.height };
+    recompute();
   };
 
   return (
@@ -75,11 +110,16 @@ export default function CourseScreen() {
         ref={scrollRef}
         onScroll={onScroll}
         scrollEventThrottle={16}
-        onLayout={(e) => (viewport.current = e.nativeEvent.layout.height)}
-        onContentSizeChange={(_, h) => (contentH.current = h)}
-        contentContainerStyle={styles.content}
+        onLayout={(e) => {
+          viewport.current = e.nativeEvent.layout.height;
+          recompute();
+        }}
+        snapToOffsets={snaps.length ? snaps : undefined}
+        snapToEnd={false}
+        decelerationRate="fast"
+        contentContainerStyle={[styles.content, { paddingBottom: bottomPad }]}
       >
-        {AID_STATIONS.map((item) => {
+        {AID_STATIONS.map((item, idx) => {
           const kc = badgeColor(item, t);
           const on = item.id === activeId;
           return (
@@ -114,6 +154,22 @@ export default function CourseScreen() {
                   <Ionicons name="chevron-forward" size={18} color={t.muted} />
                 </Pressable>
               </Link>
+              {idx < AID_STATIONS.length - 1 && <Leg from={item} next={AID_STATIONS[idx + 1]} />}
+              {item.kind === 'finish' && (
+                <Pressable
+                  onPress={() => router.push('/planner')}
+                  style={[styles.cta, { backgroundColor: t.primarySoft, borderColor: t.border }]}
+                >
+                  <View style={[styles.ctaIcon, { backgroundColor: t.primary }]}>
+                    <Ionicons name="timer" size={20} color="#ffffff" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.ctaTitle, { color: t.text }]}>Pace planner</Text>
+                    <Text style={[styles.ctaSub, { color: t.muted }]}>When will your runner reach each station?</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={t.muted} />
+                </Pressable>
+              )}
             </View>
           );
         })}
@@ -127,7 +183,7 @@ const styles = StyleSheet.create({
   title: { color: '#ffffff', fontSize: 26, fontWeight: '800', marginLeft: 8 },
   sub: { color: '#bcd6e6', fontSize: 13, fontWeight: '600', marginLeft: 8, marginTop: 2, marginBottom: 10 },
   chart: { marginHorizontal: -4 },
-  content: { padding: 16, paddingTop: 14, gap: 10, paddingBottom: 60 },
+  content: { padding: 16, paddingTop: 12 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 18, gap: 12 },
   badge: { width: 58, height: 58, borderRadius: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   badgeNum: { fontSize: 19, fontWeight: '900' },
@@ -136,4 +192,13 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
   chipText: { fontSize: 12, fontWeight: '700' },
+  leg: { flexDirection: 'row', minHeight: 78, paddingLeft: 0 },
+  legLine: { position: 'absolute', left: 40, top: 0, bottom: 0, width: 3, borderRadius: 2 },
+  legBody: { marginLeft: 66, justifyContent: 'center', paddingVertical: 10 },
+  legTo: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 },
+  legChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  cta: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 18, borderWidth: 1, marginTop: 14 },
+  ctaIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  ctaTitle: { fontSize: 16, fontWeight: '800' },
+  ctaSub: { fontSize: 13, marginTop: 1 },
 });
