@@ -9,7 +9,9 @@ import { AID_STATIONS, AidStation, CREW_LABEL, CrewAccess } from '../../src/data
 import { BRAND_BLUE, Theme, useTheme } from '../../src/theme';
 
 const crewColor = (a: CrewAccess, t: Theme) => ({ yes: t.green, 'hike-in': t.amber, no: t.red })[a];
-const kindColor = (k: AidStation['kind'], t: Theme) => ({ start: t.green, finish: t.red, cutoff: t.amber, aid: t.primary })[k];
+// Mile badge color: start/finish are green, cutoff-only checkpoints amber, and aid stations follow their crew access.
+const badgeColor = (s: AidStation, t: Theme) =>
+  s.kind === 'start' || s.kind === 'finish' ? t.green : s.kind === 'cutoff' ? t.amber : s.crewAccess === 'no' ? t.red : s.crewAccess === 'hike-in' ? t.amber : t.primary;
 
 function Chip({ label, color, icon }: { label: string; color: string; icon?: keyof typeof Ionicons.glyphMap }) {
   return (
@@ -78,7 +80,7 @@ export default function CourseScreen() {
         contentContainerStyle={styles.content}
       >
         {AID_STATIONS.map((item) => {
-          const kc = kindColor(item.kind, t);
+          const kc = badgeColor(item, t);
           const on = item.id === activeId;
           return (
             <View key={item.id} onLayout={onRowLayout(item.id)}>
