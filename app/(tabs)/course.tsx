@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ElevationChart } from '../../src/components/ElevationChart';
 import { tint } from '../../src/components/ui';
@@ -115,6 +115,35 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
+const ZOOM_SPAN = 38;
+
+// Owns the zoom window state so per-frame updates only re-render the chart.
+const ZoomChart = memo(function ZoomChart({
+  activeId,
+  onSelect,
+  center,
+  progress,
+}: {
+  activeId: string;
+  onSelect: (id: string) => void;
+  center: Animated.Value;
+  progress: Animated.Value;
+}) {
+  const [view, setView] = useState({ start: 0, span: ZOOM_SPAN });
+  useEffect(() => {
+    let c = AID_STATIONS[0].mile, p = 0;
+    const apply = () => {
+      const span = ZOOM_SPAN + (100 - ZOOM_SPAN) * p;
+      const start = Math.min(Math.max(c - span / 2, 0), 100 - span);
+      setView((v) => (Math.abs(v.start - start) < 0.02 && Math.abs(v.span - span) < 0.02 ? v : { start, span }));
+    };
+    const a = center.addListener(({ value }) => { c = value; apply(); });
+    const b = progress.addListener(({ value }) => { p = value; apply(); });
+    return () => { center.removeListener(a); progress.removeListener(b); };
+  }, [center, progress]);
+  return <ElevationChart stations={AID_STATIONS} height={185} activeStationId={activeId} onSelectStation={onSelect} tone="dark" viewStart={view.start} viewSpan={view.span} />;
+});
+
 export default function CourseScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -130,7 +159,7 @@ export default function CourseScreen() {
   const settle = useCallback(
     (open: boolean) => {
       isOpen.current = open;
-      Animated.spring(progress, { toValue: open ? 1 : 0, useNativeDriver: false, bounciness: 4, speed: 14 }).start();
+      Animated.timing(progress, { toValue: open ? 1 : 0, duration: open ? 300 : 240, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     },
     [progress],
   );
@@ -144,23 +173,12 @@ export default function CourseScreen() {
       }),
     [progress, settle],
   );
-  // Zoomed window that follows the selected station; pulling the header down widens it to the whole course.
-  const ZOOM_SPAN = 38;
+  // Zoom center follows the selected station (animated); the chart subscribes to it directly so the
+  // station list is not re-rendered on every animation frame.
   const center = useRef(new Animated.Value(AID_STATIONS[0].mile)).current;
-  const [view, setView] = useState({ start: 0, span: ZOOM_SPAN });
-  useEffect(() => {
-    let c = AID_STATIONS[0].mile, p = 0;
-    const apply = () => {
-      const span = ZOOM_SPAN + (100 - ZOOM_SPAN) * p;
-      setView({ start: Math.min(Math.max(c - span / 2, 0), 100 - span), span });
-    };
-    const a = center.addListener(({ value }) => { c = value; apply(); });
-    const b = progress.addListener(({ value }) => { p = value; apply(); });
-    return () => { center.removeListener(a); progress.removeListener(b); };
-  }, [center, progress]);
   useEffect(() => {
     const m = AID_STATIONS.find((s) => s.id === activeId)?.mile ?? 0;
-    Animated.spring(center, { toValue: m, useNativeDriver: false, speed: 12, bounciness: 0 }).start();
+    Animated.timing(center, { toValue: m, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
   }, [activeId, center]);
 
   const panelHeight = progress.interpolate({ inputRange: [0, 1], outputRange: [0, PANEL_H] });
@@ -215,7 +233,7 @@ export default function CourseScreen() {
         <Text style={styles.title}>Course</Text>
         <Text style={styles.sub}>Pull down to see the whole course</Text>
         <View style={styles.chart}>
-          <ElevationChart stations={AID_STATIONS} height={185} activeStationId={activeId} onSelectStation={jumpTo} tone="dark" viewStart={view.start} viewSpan={view.span} />
+          <ZoomChart activeId={activeId} onSelect={jumpTo} center={center} progress={progress} />
         </View>
         <Animated.View style={{ height: panelHeight, overflow: 'hidden', opacity: progress }}>
           <View style={{ paddingHorizontal: 8, paddingTop: 4 }}>
