@@ -23,7 +23,6 @@ export default function TabLayout() {
       <Tabs.Screen name="course" options={{ title: 'Course', headerShown: false, tabBarIcon: icon('trail-sign') }} />
       <Tabs.Screen name="map" options={{ title: 'Map', headerShown: false, tabBarIcon: icon('map') }} />
       <Tabs.Screen name="lottery" options={{ title: 'Lottery', headerShown: false, tabBarIcon: icon('ticket') }} />
-      <Tabs.Screen name="track" options={{ title: 'Tracking', headerShown: false, tabBarIcon: icon('locate') }} />
     </Tabs>
   );
 }

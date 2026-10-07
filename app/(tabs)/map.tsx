@@ -1,23 +1,27 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Asset } from 'expo-asset';
 import * as Location from 'expo-location';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import * as Sharing from 'expo-sharing';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Animated, Easing, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { MapType, Marker, Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AID_STATIONS } from '../../src/data/aidStations';
 import course from '../../src/data/course.json';
+import { RACE } from '../../src/data/race';
 import { stationColor } from '../../src/stationStyle';
 import { useTheme } from '../../src/theme';
 
 const coords = (course.coordinates as number[][]).map(([latitude, longitude]) => ({ latitude, longitude }));
-const STYLES: { type: MapType; label: string; swatch: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { type: 'standard', label: 'Terrain', swatch: '#6aaa64', icon: 'trail-sign' },
-  { type: 'hybrid', label: 'Hybrid', swatch: '#3d5a47', icon: 'globe' },
-  { type: 'satellite', label: 'Satellite', swatch: '#27402f', icon: 'earth' },
+const STYLES: { type: MapType; label: string; swatch: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
+  { type: 'standard', label: 'Terrain', swatch: '#6aaa64', icon: 'terrain' },
+  { type: 'hybrid', label: 'Hybrid', swatch: '#3d5a47', icon: 'layers-triple' },
+  { type: 'satellite', label: 'Satellite', swatch: '#27402f', icon: 'satellite-variant' },
 ];
+
+const SHEET_EXTRA = 170; // height of the live tracking section when pulled up
 
 // Zoomed out: two-letter code. Zoomed in: code plus mile marker.
 const NEAR_DELTA = 0.22;
@@ -45,6 +49,32 @@ export default function MapScreen() {
   const [near, setNear] = useState(false);
   const [layersOpen, setLayersOpen] = useState(false);
   const [showStations, setShowStations] = useState(true);
+
+  // Pull-up sheet: course info stays visible; live tracking slides up from the bottom.
+  const { tracking } = useLocalSearchParams<{ tracking?: string }>();
+  const sheet = useRef(new Animated.Value(0)).current;
+  const sheetOpen = useRef(false);
+  const settleSheet = useCallback(
+    (open: boolean) => {
+      sheetOpen.current = open;
+      Animated.timing(sheet, { toValue: open ? 1 : 0, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    },
+    [sheet],
+  );
+  useEffect(() => {
+    if (tracking) settleSheet(true);
+  }, [tracking, settleSheet]);
+  const sheetPan = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 8 && Math.abs(g.dy) > Math.abs(g.dx),
+        onPanResponderMove: (_e, g) => sheet.setValue(Math.min(Math.max((sheetOpen.current ? 1 : 0) - g.dy / SHEET_EXTRA, 0), 1)),
+        onPanResponderRelease: (_e, g) => settleSheet(sheetOpen.current ? !(g.dy > 30) : g.dy < -30),
+        onPanResponderTerminate: () => settleSheet(sheetOpen.current),
+      }),
+    [sheet, settleSheet],
+  );
+  const extraHeight = sheet.interpolate({ inputRange: [0, 1], outputRange: [0, SHEET_EXTRA] });
   useEffect(() => {
     setPinsTracking(true);
     const id = setTimeout(() => setPinsTracking(false), 1200);
@@ -133,7 +163,7 @@ export default function MapScreen() {
                 return (
                   <Pressable key={o.type} onPress={() => setMapType(o.type)} style={styles.styleOpt}>
                     <View style={[styles.swatch, { backgroundColor: o.swatch, borderColor: on ? t.primary : t.border, borderWidth: on ? 3 : 1 }]}>
-                      <Ionicons name={o.icon} size={22} color="#ffffff" />
+                      <MaterialCommunityIcons name={o.icon} size={28} color="#ffffff" />
                     </View>
                     <Text style={[styles.styleLabel, { color: on ? t.primary : t.text, fontWeight: on ? '800' : '600' }]}>{o.label}</Text>
                   </Pressable>
@@ -151,7 +181,10 @@ export default function MapScreen() {
         </>
       )}
 
-      <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
+      <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]} {...sheetPan.panHandlers}>
+        <Pressable onPress={() => settleSheet(!sheetOpen.current)} hitSlop={10} style={styles.handleWrap} accessibilityLabel="Toggle live tracking">
+          <View style={[styles.handle, { backgroundColor: t.border }]} />
+        </Pressable>
         <View style={styles.cardTop}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.cardTitle, { color: t.text }]}>Crazy Mountain 100</Text>
@@ -162,6 +195,24 @@ export default function MapScreen() {
             <Text style={styles.gpxText}>GPX</Text>
           </Pressable>
         </View>
+        <Pressable onPress={() => settleSheet(!sheetOpen.current)} style={[styles.trackRow, { backgroundColor: t.primarySoft }]}>
+          <Ionicons name="radio" size={18} color={t.primary} />
+          <Text style={[styles.trackLabel, { color: t.primary }]}>Live runner tracking</Text>
+          <Animated.View style={{ transform: [{ rotate: sheet.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
+            <Ionicons name="chevron-up" size={18} color={t.primary} />
+          </Animated.View>
+        </Pressable>
+        <Animated.View style={{ height: extraHeight, overflow: 'hidden', opacity: sheet }}>
+          <Text style={[styles.trackBody, { color: t.text }]}>
+            Runners carry race-provided GPS trackers, and positions appear live on Trackleaders. It needs cell service, so crews in dead
+            zones will see stale positions.
+          </Text>
+          <Pressable onPress={() => WebBrowser.openBrowserAsync(RACE.trackingUrl)} style={[styles.trackBtn, { backgroundColor: t.primary }]}>
+            <Text style={styles.trackBtnText}>Open live tracking</Text>
+            <Ionicons name="open-outline" size={16} color="#ffffff" />
+          </Pressable>
+          <Text style={[styles.trackNote, { color: t.muted }]}>Coming: runners shown directly on this map.</Text>
+        </Animated.View>
         <Text style={[styles.hint, { color: t.muted }]}>Offline map downloads are coming soon.</Text>
       </View>
     </View>
@@ -200,6 +251,14 @@ const styles = StyleSheet.create({
   toggleText: { flex: 1, fontSize: 15, fontWeight: '700' },
   floatingBtns: { position: 'absolute', right: 12, gap: 10 },
   round: { width: 46, height: 46, borderRadius: 23, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  handleWrap: { alignItems: 'center', paddingBottom: 8 },
+  handle: { width: 40, height: 5, borderRadius: 3 },
+  trackRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12 },
+  trackLabel: { flex: 1, fontSize: 14, fontWeight: '800' },
+  trackBody: { fontSize: 14, lineHeight: 20, marginTop: 12 },
+  trackBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: 12, marginTop: 12 },
+  trackBtnText: { color: '#ffffff', fontSize: 15, fontWeight: '800' },
+  trackNote: { fontSize: 12, textAlign: 'center', marginTop: 8 },
   card: { position: 'absolute', left: 12, right: 12, bottom: 12, borderRadius: 22, borderWidth: 1, padding: 14 },
   cardTop: { flexDirection: 'row', alignItems: 'center' },
   cardTitle: { fontSize: 18, fontWeight: '800' },
