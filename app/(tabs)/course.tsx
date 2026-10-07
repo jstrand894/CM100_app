@@ -230,6 +230,7 @@ export default function CourseScreen() {
       <ScrollView
         ref={scrollRef}
         onScroll={onScroll}
+        onScrollBeginDrag={() => isOpen.current && settle(false)}
         scrollEventThrottle={16}
         onLayout={(e) => {
           viewport.current = e.nativeEvent.layout.height;
