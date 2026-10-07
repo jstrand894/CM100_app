@@ -1,13 +1,17 @@
 {
   "expo": {
-    "name": "CM100_app",
+    "name": "Crazy Mountain 100",
     "slug": "CM100_app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jstrand894.cm100",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Shows your position on the course map and helps you navigate to aid stations."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -16,10 +20,24 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.jstrand894.cm100"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      "expo-sharing",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Shows your position on the course map and helps you navigate to aid stations."
+        }
+      ],
+      "expo-asset"
+    ],
+    "scheme": "cm100"
   }
 }
