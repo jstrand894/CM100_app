@@ -79,3 +79,15 @@ export function durationLabel(hrs: number): string {
   const h = Math.floor(total / 60), m = total % 60;
   return h > 0 ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`;
 }
+
+// Finds the finish time (hours) whose model has the runner at `stationId` after `elapsed` hours.
+// Used by live mode: log when a runner really reached a station, get the pace-implied finish.
+export function impliedFinishHours(stationId: string, elapsed: number): number {
+  let lo = 12, hi = 60;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if ((elapsedHours(mid)[stationId] ?? 0) < elapsed) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
