@@ -19,13 +19,15 @@ const STYLES: { type: MapType; label: string }[] = [
   { type: 'satellite', label: 'Satellite' },
 ];
 
-const ICON: Record<string, keyof typeof Ionicons.glyphMap> = { start: 'flag', finish: 'checkmark' };
+// Zoomed out: two-letter code. Zoomed in: code plus mile marker.
+const NEAR_DELTA = 0.22;
 
-function StationPin({ label, color, icon, small }: { label: string; color: string; icon?: keyof typeof Ionicons.glyphMap; small?: boolean }) {
+function StationPin({ code, mile, color, near, small }: { code: string; mile: number; color: string; near: boolean; small?: boolean }) {
   return (
     <View style={styles.pinWrap}>
-      <View style={[styles.pin, small && styles.pinSmall, { backgroundColor: color }]}>
-        {icon ? <Ionicons name={icon} size={16} color="#ffffff" /> : <Text style={styles.pinText}>{label}</Text>}
+      <View style={[styles.pin, small && styles.pinSmall, near && styles.pinNear, { backgroundColor: color }]}>
+        <Text style={styles.pinText}>{code}</Text>
+        {near && <Text style={styles.pinMile}>{`${Math.round(mile * 10) / 10} mi`}</Text>}
       </View>
       <View style={[styles.pinTip, { borderTopColor: color }]} />
     </View>
@@ -40,10 +42,12 @@ export default function MapScreen() {
   const [hasLocation, setHasLocation] = useState(false);
   // Custom marker views are snapshotted by the native map, so keep tracking on until they have drawn.
   const [pinsTracking, setPinsTracking] = useState(true);
+  const [near, setNear] = useState(false);
   useEffect(() => {
-    const id = setTimeout(() => setPinsTracking(false), 2000);
+    setPinsTracking(true);
+    const id = setTimeout(() => setPinsTracking(false), 1200);
     return () => clearTimeout(id);
-  }, []);
+  }, [near]);
 
   const fit = () =>
     mapRef.current?.fitToCoordinates(coords, {
@@ -85,6 +89,7 @@ export default function MapScreen() {
         showsCompass={false}
         showsScale
         onMapReady={() => setTimeout(fit, 400)}
+        onRegionChangeComplete={(r) => setNear(r.latitudeDelta < NEAR_DELTA)}
         initialRegion={{
           latitude: (course.bounds.minLat + course.bounds.maxLat) / 2,
           longitude: (course.bounds.minLon + course.bounds.maxLon) / 2,
@@ -104,12 +109,7 @@ export default function MapScreen() {
             tracksViewChanges={pinsTracking}
             onCalloutPress={() => router.push({ pathname: '/aid/[id]', params: { id: st.id } })}
           >
-            <StationPin
-              label={`${Math.round(st.mile)}`}
-              color={stationColor(st, t)}
-              icon={ICON[st.kind]}
-              small={st.kind === 'cutoff'}
-            />
+            <StationPin code={st.code} mile={st.mile} color={stationColor(st, t)} near={near} small={st.kind === 'cutoff'} />
           </Marker>
         ))}
       </MapView>
@@ -161,8 +161,10 @@ function RoundButton({ icon, label, onPress }: { icon: keyof typeof Ionicons.gly
 
 const styles = StyleSheet.create({
   pinWrap: { alignItems: 'center' },
-  pin: { minWidth: 34, height: 34, borderRadius: 17, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
-  pinSmall: { minWidth: 28, height: 28, borderRadius: 14 },
+  pin: { minWidth: 36, height: 36, borderRadius: 18, paddingHorizontal: 7, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
+  pinSmall: { minWidth: 30, height: 30, borderRadius: 15 },
+  pinNear: { height: 44, borderRadius: 16, paddingHorizontal: 9 },
+  pinMile: { color: 'rgba(255,255,255,0.92)', fontSize: 10, fontWeight: '800', marginTop: -1 },
   pinText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
   pinTip: { width: 0, height: 0, borderLeftWidth: 5, borderRightWidth: 5, borderTopWidth: 7, borderLeftColor: 'transparent', borderRightColor: 'transparent', marginTop: -2 },
   floatingBtns: { position: 'absolute', right: 12, gap: 10 },

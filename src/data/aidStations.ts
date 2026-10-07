@@ -9,6 +9,8 @@ export interface LatLng { latitude: number; longitude: number }
 export interface AidStation {
   id: string;
   name: string;
+  /** Two-letter shorthand used on the map when zoomed out. */
+  code: string;
   kind: StationKind;
   mile: number;
   gainFt: number | null; // gain since previous station
@@ -28,6 +30,7 @@ export interface AidStation {
 export const AID_STATIONS: AidStation[] = [
   {
     id: "start",
+    code: "ST",
     name: "Start: Westling Ranch",
     kind: "start",
     mile: 0,
@@ -46,6 +49,7 @@ export const AID_STATIONS: AidStation[] = [
   },
   {
     id: "porcupine",
+    code: "PO",
     name: "Porcupine",
     kind: "aid",
     mile: 6.1,
@@ -64,6 +68,7 @@ export const AID_STATIONS: AidStation[] = [
   },
   {
     id: "ibex",
+    code: "IB",
     name: "Ibex",
     kind: "aid",
     mile: 19.5,
@@ -82,6 +87,7 @@ export const AID_STATIONS: AidStation[] = [
   },
   {
     id: "cow-camp-1",
+    code: "CC",
     name: "Cow Camp (first visit)",
     kind: "aid",
     mile: 32.1,
@@ -100,6 +106,7 @@ export const AID_STATIONS: AidStation[] = [
   },
   {
     id: "half-moon",
+    code: "HM",
     name: "Half Moon",
     kind: "aid",
     mile: 43.7,
@@ -118,6 +125,7 @@ export const AID_STATIONS: AidStation[] = [
   },
   {
     id: "conical-pass",
+    code: "CP",
     name: "Conical Pass Cutoff",
     kind: "cutoff",
     mile: 50.0,
@@ -136,6 +144,7 @@ export const AID_STATIONS: AidStation[] = [
   },
   {
     id: "cow-camp-2",
+    code: "CC",
     name: "Cow Camp (second visit)",
     kind: "aid",
     mile: 55.3,
@@ -154,6 +163,7 @@ export const AID_STATIONS: AidStation[] = [
   },
   {
     id: "sunlight",
+    code: "SL",
     name: "Sunlight",
     kind: "aid",
     mile: 63.9,
@@ -172,6 +182,7 @@ export const AID_STATIONS: AidStation[] = [
   },
   {
     id: "crandall",
+    code: "CR",
     name: "Crandall Creek",
     kind: "aid",
     mile: 71.1,
@@ -190,6 +201,7 @@ export const AID_STATIONS: AidStation[] = [
   },
   {
     id: "forest-lake",
+    code: "FL",
     name: "Forest Lake",
     kind: "aid",
     mile: 79.0,
@@ -208,6 +220,7 @@ export const AID_STATIONS: AidStation[] = [
   },
   {
     id: "honey-trail",
+    code: "HT",
     name: "Honey Trail",
     kind: "aid",
     mile: 86.2,
@@ -226,6 +239,7 @@ export const AID_STATIONS: AidStation[] = [
   },
   {
     id: "huntin-camp",
+    code: "HC",
     name: "Huntin' Camp",
     kind: "aid",
     mile: 93.5,
@@ -244,6 +258,7 @@ export const AID_STATIONS: AidStation[] = [
   },
   {
     id: "finish",
+    code: "FN",
     name: "Finish: Berg Ranch",
     kind: "finish",
     mile: 100,
