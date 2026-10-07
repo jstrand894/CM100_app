@@ -22,7 +22,7 @@ const STYLES: { type: MapType; label: string; swatch: string; icon: keyof typeof
 ];
 
 const SHEET_EXTRA = 170; // height of the live tracking section when pulled up
-const PEEK_H = 96; // visible height of the minimized sheet
+const PEEK_H = 58; // visible height of the minimized sheet
 
 // Zoomed out: two-letter code. Zoomed in: code plus mile marker.
 const NEAR_DELTA = 0.22;
@@ -205,7 +205,7 @@ export default function MapScreen() {
         onLayout={(e) => {
           // Remove the tracking section's current height so the base card size is measured, even mid-animation.
           const base = e.nativeEvent.layout.height - SHEET_EXTRA * Math.max(sheetVal.current, 0);
-          const d = Math.min(Math.max(base - PEEK_H, 60), 130);
+          const d = Math.min(Math.max(base - PEEK_H, 60), 160);
           if (Math.abs(d - hideRef.current) > 1) {
             hideRef.current = d;
             setHideDist(d);
@@ -220,7 +220,7 @@ export default function MapScreen() {
         <View style={styles.cardTop}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.cardTitle, { color: t.text }]}>{mini ? 'Tracking & GPX' : 'Crazy Mountain 100'}</Text>
-            <Text style={[styles.cardSub, { color: t.muted }]}>{mini ? 'Swipe up for live tracking and the GPX file' : `${course.totalMiles} mi · Wilsall to Lennep`}</Text>
+            {!mini && <Text style={[styles.cardSub, { color: t.muted }]}>{`${course.totalMiles} mi · Wilsall to Lennep`}</Text>}
           </View>
           {!mini && (
           <Pressable onPress={shareGpx} style={[styles.gpx, { backgroundColor: t.primary }]}>
