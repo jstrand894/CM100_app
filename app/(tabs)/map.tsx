@@ -5,7 +5,9 @@ import * as Sharing from 'expo-sharing';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { MapType, Marker, Polyline } from 'react-native-maps';
+import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AID_STATIONS } from '../../src/data/aidStations';
 import course from '../../src/data/course.json';
 import { useTheme } from '../../src/theme';
 
@@ -71,8 +73,16 @@ export default function MapScreen() {
         }}
       >
         <Polyline coordinates={coords} strokeColor={t.accent} strokeWidth={4} />
-        <Marker coordinate={coords[0]} title="Start" description="Westling Ranch, Wilsall" pinColor="green" />
-        <Marker coordinate={coords[coords.length - 1]} title="Finish" description="Berg Ranch, Lennep" pinColor="red" />
+        {AID_STATIONS.map((st) => (
+          <Marker
+            key={st.id}
+            coordinate={st.courseCoordinate}
+            title={`${st.name} (mi ${st.mile})`}
+            description={st.cutoff ? `Cutoff ${st.cutoff} · tap for details` : 'Tap for details'}
+            pinColor={st.kind === 'start' ? 'green' : st.kind === 'finish' ? 'red' : st.kind === 'cutoff' ? 'yellow' : 'orange'}
+            onCalloutPress={() => router.push({ pathname: '/aid/[id]', params: { id: st.id } })}
+          />
+        ))}
       </MapView>
 
       <View style={[styles.bar, { top: insets.top + 12 }]}>
