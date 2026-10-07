@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ElevationChart } from '../../src/components/ElevationChart';
@@ -111,6 +111,21 @@ function Stat({ label, value }: { label: string; value: string }) {
         {value}
       </Text>
     </View>
+  );
+}
+
+const SELECTED_SCALE = 1.04;
+
+// Grows the selected station card slightly; the fixed frame is scaled to match.
+function Grow({ active, children }: { active: boolean; children: ReactNode }) {
+  const v = useRef(new Animated.Value(active ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.spring(v, { toValue: active ? 1 : 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
+  }, [active, v]);
+  return (
+    <Animated.View style={{ transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, SELECTED_SCALE] }) }], zIndex: active ? 1 : 0 }}>
+      {children}
+    </Animated.View>
   );
 }
 
@@ -274,6 +289,7 @@ export default function CourseScreen() {
           const kc = badgeColor(item, t);
           return (
             <View key={item.id} onLayout={onRowLayout(item.id)}>
+              <Grow active={item.id === activeId}>
               <Link href={{ pathname: '/aid/[id]', params: { id: item.id } }} asChild>
                 <Pressable
                   onLayout={(e) => {
@@ -308,6 +324,7 @@ export default function CourseScreen() {
                   <Ionicons name="chevron-forward" size={18} color={t.muted} />
                 </Pressable>
               </Link>
+              </Grow>
               {idx < AID_STATIONS.length - 1 && <Leg from={item} next={AID_STATIONS[idx + 1]} />}
               {item.kind === 'finish' && (
                 <Pressable
@@ -329,7 +346,7 @@ export default function CourseScreen() {
         })}
       </ScrollView>
       {/* Fixed selection frame: the list scrolls underneath it, so it never slides away with a row. */}
-      <Animated.View pointerEvents="none" style={[styles.frame, { height: frameH, borderColor: t.accent, backgroundColor: tint(t.accent, 0.08) }]} />
+      <Animated.View pointerEvents="none" style={[styles.frame, { height: frameH, transform: [{ scale: SELECTED_SCALE }], borderColor: t.accent, backgroundColor: tint(t.accent, 0.08) }]} />
       </View>
     </View>
   );
