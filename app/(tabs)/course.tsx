@@ -7,12 +7,11 @@ import { ElevationChart } from '../../src/components/ElevationChart';
 import { tint } from '../../src/components/ui';
 import { AID_STATIONS, AidStation, CREW_LABEL, CrewAccess } from '../../src/data/aidStations';
 import { COURSE_STATS, elevationAtMile } from '../../src/data/elevationUtil';
+import { stationColor } from '../../src/stationStyle';
 import { BRAND_BLUE, Theme, useTheme } from '../../src/theme';
 
 const crewColor = (a: CrewAccess, t: Theme) => ({ yes: t.green, 'hike-in': t.amber, no: t.red })[a];
-// Mile badge color: start/finish are green, cutoff-only checkpoints amber, and aid stations follow their crew access.
-const badgeColor = (s: AidStation, t: Theme) =>
-  s.kind === 'start' || s.kind === 'finish' ? t.green : s.kind === 'cutoff' ? t.amber : s.crewAccess === 'no' ? t.red : s.crewAccess === 'hike-in' ? t.amber : t.primary;
+const badgeColor = stationColor;
 
 function Chip({ label, color, icon }: { label: string; color: string; icon?: keyof typeof Ionicons.glyphMap }) {
   return (
