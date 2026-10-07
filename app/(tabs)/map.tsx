@@ -57,6 +57,11 @@ export default function MapScreen() {
   const level = useRef(0);
   const [hideDist, setHideDist] = useState(110);
   const hideRef = useRef(110);
+  const sheetVal = useRef(0);
+  useEffect(() => {
+    const id = sheet.addListener(({ value }) => (sheetVal.current = value));
+    return () => sheet.removeListener(id);
+  }, [sheet]);
   const goTo = useCallback(
     (l: number) => {
       level.current = l;
@@ -194,8 +199,10 @@ export default function MapScreen() {
 
       <Animated.View
         onLayout={(e) => {
-          if (level.current !== 1) {
-            const d = Math.max(e.nativeEvent.layout.height - PEEK_H, 80);
+          // Remove the tracking section's current height so the base card size is measured, even mid-animation.
+          const base = e.nativeEvent.layout.height - SHEET_EXTRA * Math.max(sheetVal.current, 0);
+          const d = Math.min(Math.max(base - PEEK_H, 60), 130);
+          if (Math.abs(d - hideRef.current) > 1) {
             hideRef.current = d;
             setHideDist(d);
           }
