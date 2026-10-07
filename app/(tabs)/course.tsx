@@ -36,8 +36,8 @@ function Leg({ from, next }: { from: AidStation; next: AidStation }) {
         <Text style={[styles.legTo, { color: t.muted }]}>To {next.name.replace(/^Finish: /, '')}</Text>
         <View style={styles.legChips}>
           <Chip label={`${miles} mi`} color={t.muted} icon="walk" />
-          {next.gainFt != null && <Chip label={`+${fmt(next.gainFt)} ft`} color={t.accent} icon="trending-up" />}
-          {next.lossFt != null && <Chip label={`−${fmt(next.lossFt)} ft`} color={t.primary} icon="trending-down" />}
+          {next.gainFt != null && <Chip label={`+${fmt(next.gainFt)} ft`} color={t.muted} icon="trending-up" />}
+          {next.lossFt != null && <Chip label={`−${fmt(next.lossFt)} ft`} color={t.muted} icon="trending-down" />}
         </View>
       </View>
     </View>
