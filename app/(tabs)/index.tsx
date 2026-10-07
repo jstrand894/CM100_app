@@ -5,7 +5,7 @@ import { Animated, Image, Linking, Pressable, StyleSheet, Text, View } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ElevationChart } from '../../src/components/ElevationChart';
 import { AID_STATIONS } from '../../src/data/aidStations';
-import { INFO_PAGES, MENU } from '../../src/data/info';
+import { LOTTERY } from '../../src/data/lottery';
 import { HIGHLIGHTS, RACE } from '../../src/data/race';
 import { BRAND_BLUE, useTheme } from '../../src/theme';
 
@@ -21,13 +21,23 @@ function countdown(): { big: string; small: string } {
   return { big: 'Finished', small: 'See you next year' };
 }
 
+function lotteryLine(): string | null {
+  const now = Date.now();
+  const opens = new Date(LOTTERY.opensIso).getTime();
+  const closes = new Date(LOTTERY.closesIso).getTime();
+  const day = 86400000;
+  if (now < opens) return `Lottery opens in ${Math.ceil((opens - now) / day)} days`;
+  if (now < closes) return `Lottery open now · ${Math.ceil((closes - now) / day)} days left to apply`;
+  return null;
+}
+
 const TILES: { label: string; sub: string; icon: keyof typeof Ionicons.glyphMap; href: Href }[] = [
-  { label: 'Course map', sub: '99.4 mi, download GPX', icon: 'map', href: '/map' },
-  { label: 'Aid stations', sub: 'Profile, cutoffs, crew access', icon: 'location', href: '/course' },
   { label: 'Live tracking', sub: 'Follow your runner', icon: 'radio', href: '/map?tracking=1' },
   { label: 'Race weekend', sub: 'Schedule and shuttle', icon: 'calendar', href: '/info/schedule' },
-  { label: 'Pace planner', sub: 'When will they arrive?', icon: 'timer', href: '/planner' },
-  { label: 'Elevation', sub: 'Profile and climbing', icon: 'trending-up', href: '/elevation' },
+  { label: 'Gear and drop bags', sub: 'Mandatory and recommended', icon: 'bag-handle', href: '/info/gear' },
+  { label: 'Crew and pacers', sub: 'Rules for support teams', icon: 'people', href: '/info/crew' },
+  { label: 'Emergency', sub: 'Hospitals and urgent care', icon: 'medkit', href: '/info/emergency' },
+  { label: 'Food and lodging', sub: 'Wilsall, Big Timber, Clyde Park', icon: 'restaurant', href: '/info/local' },
 ];
 
 const STATS = [
@@ -41,6 +51,7 @@ export default function HomeScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const c = countdown();
+  const lottery = lotteryLine();
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const heroHeight = insets.top + 250;
@@ -80,6 +91,12 @@ export default function HomeScreen() {
         <View style={[styles.countdown, { backgroundColor: t.card, borderColor: t.border }]}>
           <Text style={[styles.countBig, { color: t.accent }]}>{c.big}</Text>
           <Text style={[styles.countSmall, { color: t.muted }]}>{c.small}</Text>
+          {lottery && (
+            <Pressable onPress={() => router.push('/lottery')} style={[styles.lotteryPill, { backgroundColor: t.accentSoft }]}>
+              <Ionicons name="ticket" size={14} color={t.accent} />
+              <Text style={[styles.lotteryText, { color: t.accent }]}>{lottery}</Text>
+            </Pressable>
+          )}
         </View>
 
         <Pressable
@@ -130,26 +147,6 @@ export default function HomeScreen() {
           </View>
         ))}
 
-        <Text style={[styles.heading, { color: t.muted }]}>RACE INFO</Text>
-        <View style={[styles.list, { backgroundColor: t.card, borderColor: t.border }]}>
-          {MENU.map((m, i) => (
-            <Pressable
-              key={m.slug}
-              onPress={() => router.push({ pathname: '/info/[slug]', params: { slug: m.slug } })}
-              style={({ pressed }) => [styles.listRow, i > 0 && { borderTopWidth: 1, borderTopColor: t.border }, pressed && { opacity: 0.6 }]}
-            >
-              <View style={[styles.listIcon, { backgroundColor: t.accentSoft }]}>
-                <Ionicons name={m.icon as keyof typeof Ionicons.glyphMap} size={20} color={t.accent} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.listLabel, { color: t.text }]}>{INFO_PAGES[m.slug].title}</Text>
-                <Text style={[styles.listSub, { color: t.muted }]}>{m.sub}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={t.muted} />
-            </Pressable>
-          ))}
-        </View>
-
         <Pressable onPress={() => Linking.openURL(RACE.website)} style={[styles.web, { borderColor: t.border }]}>
           <Text style={[styles.webText, { color: t.primary }]}>Official race website</Text>
           <Ionicons name="open-outline" size={16} color={t.primary} />
@@ -186,6 +183,8 @@ const styles = StyleSheet.create({
   heroSub: { color: '#bcd6e6', fontSize: 14, fontWeight: '600', marginTop: 4 },
   countdown: { borderRadius: 18, borderWidth: 1, paddingVertical: 14, alignItems: 'center' },
   countBig: { fontSize: 40, fontWeight: '900', lineHeight: 46 },
+  lotteryPill: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 },
+  lotteryText: { fontSize: 13, fontWeight: '800' },
   countSmall: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase' },
   profile: { borderRadius: 18, marginTop: 14, paddingTop: 12, paddingBottom: 6, overflow: 'hidden' },
   profileTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
