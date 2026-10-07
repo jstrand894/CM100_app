@@ -22,6 +22,7 @@ const STYLES: { type: MapType; label: string; swatch: string; icon: keyof typeof
 ];
 
 const SHEET_EXTRA = 170; // height of the live tracking section when pulled up
+const PEEK_H = 96; // visible height of the minimized sheet
 
 // Zoomed out: two-letter code. Zoomed in: code plus mile marker.
 const NEAR_DELTA = 0.22;
@@ -50,31 +51,41 @@ export default function MapScreen() {
   const [layersOpen, setLayersOpen] = useState(false);
   const [showStations, setShowStations] = useState(true);
 
-  // Pull-up sheet: course info stays visible; live tracking slides up from the bottom.
+  // Bottom sheet with three positions: -1 minimized (peek), 0 default, 1 pulled up to show live tracking.
   const { tracking } = useLocalSearchParams<{ tracking?: string }>();
   const sheet = useRef(new Animated.Value(0)).current;
-  const sheetOpen = useRef(false);
-  const settleSheet = useCallback(
-    (open: boolean) => {
-      sheetOpen.current = open;
-      Animated.timing(sheet, { toValue: open ? 1 : 0, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  const level = useRef(0);
+  const [hideDist, setHideDist] = useState(110);
+  const hideRef = useRef(110);
+  const goTo = useCallback(
+    (l: number) => {
+      level.current = l;
+      Animated.timing(sheet, { toValue: l, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     },
     [sheet],
   );
   useEffect(() => {
-    if (tracking) settleSheet(true);
-  }, [tracking, settleSheet]);
+    if (tracking) goTo(1);
+  }, [tracking, goTo]);
   const sheetPan = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 8 && Math.abs(g.dy) > Math.abs(g.dx),
-        onPanResponderMove: (_e, g) => sheet.setValue(Math.min(Math.max((sheetOpen.current ? 1 : 0) - g.dy / SHEET_EXTRA, 0), 1)),
-        onPanResponderRelease: (_e, g) => settleSheet(sheetOpen.current ? !(g.dy > 30) : g.dy < -30),
-        onPanResponderTerminate: () => settleSheet(sheetOpen.current),
+        onPanResponderMove: (_e, g) => {
+          const range = g.dy < 0 ? SHEET_EXTRA : hideRef.current;
+          sheet.setValue(Math.min(Math.max(level.current - g.dy / range, -1), 1));
+        },
+        onPanResponderRelease: (_e, g) => {
+          const step = g.dy < -30 ? 1 : g.dy > 30 ? -1 : 0;
+          goTo(Math.min(Math.max(level.current + step, -1), 1));
+        },
+        onPanResponderTerminate: () => goTo(level.current),
       }),
-    [sheet, settleSheet],
+    [sheet, goTo],
   );
-  const extraHeight = sheet.interpolate({ inputRange: [0, 1], outputRange: [0, SHEET_EXTRA] });
+  const extraHeight = sheet.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 0, SHEET_EXTRA] });
+  const sheetShift = sheet.interpolate({ inputRange: [-1, 0, 1], outputRange: [hideDist, 0, 0] });
+  const detailOpacity = sheet.interpolate({ inputRange: [-1, -0.5, 0, 1], outputRange: [0, 0, 1, 1] });
   useEffect(() => {
     setPinsTracking(true);
     const id = setTimeout(() => setPinsTracking(false), 1200);
@@ -181,8 +192,18 @@ export default function MapScreen() {
         </>
       )}
 
-      <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]} {...sheetPan.panHandlers}>
-        <Pressable onPress={() => settleSheet(!sheetOpen.current)} hitSlop={10} style={styles.handleWrap} accessibilityLabel="Toggle live tracking">
+      <Animated.View
+        onLayout={(e) => {
+          if (level.current !== 1) {
+            const d = Math.max(e.nativeEvent.layout.height - PEEK_H, 80);
+            hideRef.current = d;
+            setHideDist(d);
+          }
+        }}
+        style={[styles.card, { backgroundColor: t.card, borderColor: t.border, transform: [{ translateY: sheetShift }] }]}
+        {...sheetPan.panHandlers}
+      >
+        <Pressable onPress={() => goTo(level.current === -1 ? 0 : level.current === 0 ? 1 : 0)} hitSlop={10} style={styles.handleWrap} accessibilityLabel="Toggle live tracking">
           <View style={[styles.handle, { backgroundColor: t.border }]} />
         </Pressable>
         <View style={styles.cardTop}>
@@ -195,14 +216,16 @@ export default function MapScreen() {
             <Text style={styles.gpxText}>GPX</Text>
           </Pressable>
         </View>
-        <Pressable onPress={() => settleSheet(!sheetOpen.current)} style={[styles.trackRow, { backgroundColor: t.primarySoft }]}>
+        <Animated.View style={{ opacity: detailOpacity }}>
+        <Pressable onPress={() => goTo(level.current === 1 ? 0 : 1)} style={[styles.trackRow, { backgroundColor: t.primarySoft }]}>
           <Ionicons name="radio" size={18} color={t.primary} />
           <Text style={[styles.trackLabel, { color: t.primary }]}>Live runner tracking</Text>
-          <Animated.View style={{ transform: [{ rotate: sheet.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
+          <Animated.View style={{ transform: [{ rotate: sheet.interpolate({ inputRange: [-1, 0, 1], outputRange: ['0deg', '0deg', '180deg'] }) }] }}>
             <Ionicons name="chevron-up" size={18} color={t.primary} />
           </Animated.View>
         </Pressable>
-        <Animated.View style={{ height: extraHeight, overflow: 'hidden', opacity: sheet }}>
+        </Animated.View>
+        <Animated.View style={{ height: extraHeight, overflow: 'hidden', opacity: sheet.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 0, 1] }) }}>
           <Text style={[styles.trackBody, { color: t.text }]}>
             Runners carry race-provided GPS trackers, and positions appear live on Trackleaders. It needs cell service, so crews in dead
             zones will see stale positions.
@@ -213,8 +236,8 @@ export default function MapScreen() {
           </Pressable>
           <Text style={[styles.trackNote, { color: t.muted }]}>Coming: runners shown directly on this map.</Text>
         </Animated.View>
-        <Text style={[styles.hint, { color: t.muted }]}>Offline map downloads are coming soon.</Text>
-      </View>
+        <Animated.Text style={[styles.hint, { color: t.muted, opacity: detailOpacity }]}>Offline map downloads are coming soon.</Animated.Text>
+      </Animated.View>
     </View>
   );
 }
