@@ -33,7 +33,7 @@ function lotteryLine(): string | null {
 const TILES: { label: string; sub: string; icon: keyof typeof Ionicons.glyphMap; href: Href }[] = [
   { label: 'Live tracking', sub: 'Follow your runner', icon: 'radio', href: '/map?tracking=1' },
   { label: 'Race weekend', sub: 'Schedule and shuttle', icon: 'calendar', href: '/info/schedule' },
-  { label: 'Gear and drop bags', sub: 'Mandatory and recommended', icon: 'bag-handle', href: '/info/gear' },
+  { label: 'Gear and drop bags', sub: 'Checklists you can tick off', icon: 'bag-handle', href: '/gear' },
   { label: 'Crew and pacers', sub: 'Rules for support teams', icon: 'people', href: '/info/crew' },
   { label: 'Emergency', sub: 'Hospitals and urgent care', icon: 'medkit', href: '/info/emergency' },
   { label: 'Food and lodging', sub: 'Wilsall, Big Timber, Clyde Park', icon: 'restaurant', href: '/info/local' },
