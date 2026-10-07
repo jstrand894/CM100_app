@@ -37,7 +37,11 @@ export default function AidStationDetail() {
       <SectionTitle>Station info</SectionTitle>
       <Card>
         <Row label="Mile" value={`${station.mile}`} />
-        <Row label="Cutoff" value={station.cutoff ?? 'None'} />
+        {station.kind === 'start' ? (
+          <Row label="Start time" value="Friday, 6:00 AM" />
+        ) : (
+          <Row label="Cutoff" value={station.cutoff ?? 'None'} />
+        )}
         {station.gainFt != null && <Row label="Since last station" value={`+${station.gainFt} ft`} />}
         {station.lossFt != null && <Row label="Descent since last" value={`-${station.lossFt} ft`} />}
         {!isCutoffOnly && <Row label="Drop bags" value={station.dropBags ? 'Yes' : 'No'} />}
