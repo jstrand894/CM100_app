@@ -12,6 +12,7 @@ export const RACE = {
   gain: '~23,000 ft of gain, topping out near 10,000 ft',
   cutoff: '36 hours (Saturday 6:00 PM)',
   website: 'https://www.crazymountainultra.com',
+  instagram: 'https://www.instagram.com/crazymountainultra/',
   contactEmail: 'megandehaan@crazymountainultra.com',
   // Update each year when the race publishes its Trackleaders page.
   trackingUrl: 'https://trackleaders.com/crazymtn100-26',

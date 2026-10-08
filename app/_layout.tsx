@@ -21,6 +21,7 @@ export default function RootLayout() {
         <Stack.Screen name="info/[slug]" options={{ headerShown: false }} />
         <Stack.Screen name="gear" options={{ headerShown: false }} />
         <Stack.Screen name="news" options={{ headerShown: false }} />
+        <Stack.Screen name="weather" options={{ headerShown: false }} />
         <Stack.Screen name="elevation" options={{ title: 'Elevation' }} />
       </Stack>
     </>
