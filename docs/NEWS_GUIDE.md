@@ -1,4 +1,4 @@
-# Posting race news in the app
+# Posting race news in CM100 Companion
 
 News in the app comes from a Google Sheet. Edit the sheet and the app shows the change the next time someone opens
 it (or pulls down on the News screen). You never need to update the app.
