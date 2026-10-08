@@ -65,11 +65,11 @@ function lotteryLine(now: number): string | null {
   return null;
 }
 
-const TILES: { label: string; sub: string; icon: keyof typeof Ionicons.glyphMap; href: Href }[] = [
+const TILES: { label: string; sub: string; icon: keyof typeof Ionicons.glyphMap; href: Href; urgent?: boolean }[] = [
   { label: 'Live tracking', sub: 'Follow your runner', icon: 'radio', href: '/map?tracking=1' },
   { label: 'Race weekend', sub: 'Schedule and shuttle', icon: 'calendar', href: '/info/schedule' },
-  { label: 'Gear and drop bags', sub: 'Checklists you can tick off', icon: 'bag-handle', href: '/gear' },
-  { label: 'Emergency', sub: 'Hospitals and urgent care', icon: 'medkit', href: '/info/emergency' },
+  { label: 'Gear and drop bags', sub: 'Checklists', icon: 'bag-handle', href: '/gear' },
+  { label: 'Emergency', sub: 'Hospitals and 911', icon: 'medkit', href: '/info/emergency', urgent: true },
 ];
 
 // Race-weekend card: what is next, plus shortcuts that matter at that point in the weekend.
@@ -138,7 +138,6 @@ function WeekendCard({ now, phase }: { now: number; phase: Phase }) {
 
 // Forecast once it exists (about two weeks out), otherwise what the last five years looked like on race weekend.
 function WeatherCard() {
-  const t = useTheme();
   const { forecast, history, forecastOpen, updatedAt, failed } = useWeather();
   const useForecast = forecastOpen && !!forecast;
   const rows = SPOTS.map((s) => {
@@ -154,30 +153,28 @@ function WeatherCard() {
     <Pressable
       onPress={() => router.push('/weather')}
       accessibilityLabel="Open race weekend weather"
-      style={({ pressed }) => [styles.weather, { backgroundColor: t.card, borderColor: t.border }, pressed && { opacity: 0.85 }]}
+      style={({ pressed }) => [styles.weather, { backgroundColor: BRAND_BLUE }, pressed && { opacity: 0.9 }]}
     >
-      <View style={styles.newsTop}>
-        <View style={[styles.newsIcon, { backgroundColor: t.primarySoft }]}>
-          <Ionicons name="partly-sunny" size={18} color={t.primary} />
-        </View>
-        <Text style={[styles.newsKicker, { color: t.muted }]}>{useForecast ? 'RACE DAY FORECAST' : 'TYPICAL RACE WEEKEND WEATHER'}</Text>
-        <Ionicons name="chevron-forward" size={18} color={t.muted} />
+      <Ionicons name="partly-sunny" size={120} color="rgba(255,255,255,0.12)" style={styles.wxWatermark} />
+      <View style={styles.wxTop}>
+        <Text style={styles.wxKicker}>{useForecast ? 'RACE DAY FORECAST' : 'TYPICAL RACE WEEKEND WEATHER'}</Text>
+        <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.75)" />
       </View>
       {ready ? (
         <View style={styles.wxCols}>
           {rows.map((r, i) => (
-            <View key={r!.id} style={[styles.wxCol, i > 0 && { borderLeftWidth: 1, borderLeftColor: t.border }]}>
-              <Text style={[styles.wxLabel, { color: t.muted }]}>{r!.label}</Text>
-              <Text style={[styles.wxTemp, { color: t.text }]}>
+            <View key={r!.id} style={[styles.wxCol, i > 0 && { borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.2)' }]}>
+              <Text style={styles.wxLabel}>{r!.label}</Text>
+              <Text style={styles.wxTemp}>
                 {`${r!.hi}°`}
-                <Text style={{ color: t.muted }}>{` / ${r!.lo}°`}</Text>
+                <Text style={styles.wxLow}>{` / ${r!.lo}°`}</Text>
               </Text>
-              <Text style={[styles.wxNote, { color: t.muted }]}>{r!.note}</Text>
+              <Text style={styles.wxNote}>{r!.note}</Text>
             </View>
           ))}
         </View>
       ) : (
-        <Text style={[styles.newsBody, { color: t.muted }]}>
+        <Text style={styles.wxFallback}>
           {failed ? 'No signal and nothing saved yet. ' : ''}It can be 90°F and turn to hail and snow within an hour. Tap for typical conditions and the race day forecast.
         </Text>
       )}
@@ -330,13 +327,13 @@ export default function HomeScreen() {
             <Pressable
               key={tile.label}
               onPress={() => router.push(tile.href)}
-              style={({ pressed }) => [styles.tile, { backgroundColor: t.card, borderColor: t.border }, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel={`${tile.label}. ${tile.sub}`}
+              style={({ pressed }) => [styles.tile, { backgroundColor: tile.urgent ? '#b91c1c' : BRAND_BLUE }, pressed && { opacity: 0.85 }]}
             >
-              <View style={[styles.tileIcon, { backgroundColor: t.primarySoft }]}>
-                <Ionicons name={tile.icon} size={22} color={t.primary} />
-              </View>
-              <Text style={[styles.tileLabel, { color: t.text }]}>{tile.label}</Text>
-              <Text style={[styles.tileSub, { color: t.muted }]}>{tile.sub}</Text>
+              <Ionicons name={tile.icon} size={72} color="rgba(255,255,255,0.16)" style={styles.tileWatermark} />
+              <Text style={styles.tileLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{tile.label}</Text>
+              <Text style={styles.tileSub} numberOfLines={1}>{tile.sub}</Text>
             </Pressable>
           ))}
         </View>
@@ -442,11 +439,11 @@ const styles = StyleSheet.create({
   newsTitle: { fontSize: 17, fontWeight: '800', lineHeight: 22 },
   newsBody: { fontSize: 14, lineHeight: 20, marginTop: 4 },
   newsFoot: { fontSize: 12, fontWeight: '600', marginTop: 8 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 14 },
-  tile: { width: '48%', flexGrow: 1, borderRadius: 18, borderWidth: 1, padding: 14 },
-  tileIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  tileLabel: { fontSize: 16, fontWeight: '800' },
-  tileSub: { fontSize: 12, marginTop: 2, lineHeight: 16 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  tile: { width: '48%', flexGrow: 1, minHeight: 76, justifyContent: 'flex-end', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, overflow: 'hidden' },
+  tileWatermark: { position: 'absolute', right: -8, top: -6 },
+  tileLabel: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
+  tileSub: { color: 'rgba(255,255,255,0.78)', fontSize: 12, marginTop: 1 },
   weekend: { borderRadius: 18, borderWidth: 1, padding: 14, marginTop: 14 },
   nextTitle: { fontSize: 20, fontWeight: '800', lineHeight: 26 },
   nextMeta: { fontSize: 14, fontWeight: '600', marginTop: 2 },
@@ -458,13 +455,18 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 10, marginTop: 14 },
   action: { flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 12 },
   actionText: { fontSize: 14, fontWeight: '800' },
-  weather: { borderRadius: 18, borderWidth: 1, padding: 14, marginTop: 14 },
+  weather: { borderRadius: 16, paddingVertical: 14, paddingHorizontal: 14, marginTop: 8, overflow: 'hidden' },
+  wxWatermark: { position: 'absolute', right: -14, top: -22 },
+  wxTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  wxKicker: { flex: 1, color: 'rgba(255,255,255,0.78)', fontSize: 11, fontWeight: '800', letterSpacing: 0.6 },
+  wxLow: { color: 'rgba(255,255,255,0.65)', fontSize: 18, fontWeight: '700' },
+  wxFallback: { color: '#ffffff', fontSize: 14, lineHeight: 20 },
   wxCols: { flexDirection: 'row' },
   wxCol: { flex: 1, paddingLeft: 12 },
-  wxLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' },
-  wxTemp: { fontSize: 24, fontWeight: '900', marginTop: 2, fontVariant: ['tabular-nums'] },
+  wxLabel: { color: 'rgba(255,255,255,0.78)', fontSize: 11, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' },
+  wxTemp: { color: '#ffffff', fontSize: 26, fontWeight: '900', marginTop: 2, fontVariant: ['tabular-nums'] },
   wxStale: { fontSize: 12, fontWeight: '600', marginTop: 10, textAlign: 'center' },
-  wxNote: { fontSize: 12, fontWeight: '600', marginTop: 2 },
+  wxNote: { color: 'rgba(255,255,255,0.78)', fontSize: 12, fontWeight: '600', marginTop: 2 },
   heading: { fontSize: 12, fontWeight: '800', letterSpacing: 0.9, marginTop: 24, marginBottom: 10, marginLeft: 4 },
   note: { borderRadius: 16, borderWidth: 1, padding: 14, marginBottom: 10 },
   noteTitle: { fontSize: 15, fontWeight: '800', marginBottom: 4 },

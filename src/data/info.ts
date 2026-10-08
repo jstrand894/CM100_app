@@ -7,6 +7,7 @@ export interface InfoRow {
 }
 export interface InfoSection {
   title: string;
+  urgent?: boolean; // drawn as a red call-to-action card
   rows: InfoRow[];
 }
 export interface InfoPage {
@@ -131,11 +132,12 @@ export const INFO_PAGES: Record<string, InfoPage> = {
   },
   emergency: {
     title: 'Emergency contacts',
-    intro: 'Numbers from the 2025 race guide. Verify before the race. Much of the course has no cell service.',
+    intro: 'Much of the course has no cell service.',
     sections: [
       {
         title: 'Emergency',
-        rows: [{ title: '911', body: 'Cell coverage is limited on the course.', href: 'tel:911' }],
+        urgent: true,
+        rows: [{ title: 'Call 911', body: 'Cell coverage is limited on the course.', href: 'tel:911' }],
       },
       {
         title: 'Nearby medical',

@@ -16,3 +16,9 @@ export const COURSE_STATS = {
   highFt: elevation.maxFt,
   lowFt: elevation.minFt,
 };
+
+/** Profile points between two race miles, with the exact endpoints interpolated in. */
+export function profileBetween(from: number, to: number): { mile: number; ft: number }[] {
+  const mid = PROFILE.filter((p) => p.mile > from && p.mile < to);
+  return [{ mile: from, ft: elevationAtMile(from) }, ...mid, { mile: to, ft: elevationAtMile(to) }];
+}

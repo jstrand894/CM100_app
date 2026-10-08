@@ -20,6 +20,8 @@ export default function TabLayout() {
         headerStyle: { backgroundColor: t.bg },
         headerTintColor: t.text,
         headerShadowVisible: false,
+        animation: 'fade',
+        sceneStyle: { backgroundColor: t.bg },
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Home', headerShown: false, tabBarIcon: icon('home') }} />
@@ -27,8 +29,6 @@ export default function TabLayout() {
       <Tabs.Screen name="map" options={{ title: 'Map', headerShown: false, tabBarIcon: icon('map') }} />
       <Tabs.Screen name="planner" options={{ title: 'Planner', headerShown: false, tabBarIcon: icon('timer') }} />
       <Tabs.Screen name="guide" options={{ title: 'Info', headerShown: false, tabBarIcon: icon('information-circle') }} />
-      {/* Still a route (Home links to it), just not a tab. */}
-      <Tabs.Screen name="lottery" options={{ href: null }} />
     </Tabs>
   );
 }

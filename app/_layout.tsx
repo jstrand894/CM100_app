@@ -24,6 +24,9 @@ export default function RootLayout() {
           headerShadowVisible: false,
           headerBackTitle: 'Back',
           contentStyle: { backgroundColor: t.bg },
+          animation: 'slide_from_right',
+          animationDuration: 300,
+          fullScreenGestureEnabled: true,
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -32,6 +35,7 @@ export default function RootLayout() {
         <Stack.Screen name="gear" options={{ headerShown: false }} />
         <Stack.Screen name="news" options={{ headerShown: false }} />
         <Stack.Screen name="weather" options={{ headerShown: false }} />
+        <Stack.Screen name="lottery" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="elevation" options={{ title: 'Elevation' }} />
       </Stack>
