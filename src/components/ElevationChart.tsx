@@ -29,13 +29,18 @@ interface Props {
   viewSpan?: number;
   /** Animated mile for the highlight marker so it can glide between stations. */
   activeMile?: number;
+  /** Horizontal-swipe panning (selectable mode). dMiles is how far the course has moved under the finger, positive = further along. */
+  onPanStart?: () => void;
+  onPanMove?: (dMiles: number) => void;
+  /** Release velocity in miles per second, positive = heading toward the finish. */
+  onPanEnd?: (milesPerSec: number) => void;
   /** Small decorative version: no axes, readout or touch handling. */
   compact?: boolean;
 }
 
 const shortName = (n: string) => n.replace(/^(Start|Finish): /, '').replace(/ \((first|second) visit\)/, ' ($1)');
 
-export function ElevationChart({ stations, height = 230, activeStationId = null, onSelectStation, tone = 'light', viewStart = 0, viewSpan = 100, activeMile, compact = false }: Props) {
+export function ElevationChart({ stations, height = 230, activeStationId = null, onSelectStation, tone = 'light', viewStart = 0, viewSpan = 100, activeMile, onPanStart, onPanMove, onPanEnd, compact = false }: Props) {
   const theme = useTheme();
   const dark = tone === 'dark';
   // On the blue header the chart uses its own light-on-dark palette.
@@ -77,29 +82,54 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
   };
 
   const nearest = (mile: number) => stations.reduce((b, s) => (Math.abs(s.mile - mile) < Math.abs(b.mile - mile) ? s : b), stations[0]);
-  const touch = useRef<{ x: number; moved: boolean } | null>(null);
+  const panning = !!onPanMove;
+  const touch = useRef<{ x: number; startPage: number; moved: boolean; samples: { x: number; t: number }[] } | null>(null);
   const select = (locX: number) => {
     const mile = Math.min(Math.max(viewStart + ((locX - PAD.left) / plotW) * viewSpan, 0), 100);
     if (onSelectStation) onSelectStation(nearest(mile).id);
     else setProbe(mile);
   };
-  // In selectable mode a touch only selects on a tap or a horizontal drag, so a vertical pull-down
-  // gesture on the parent never changes the selected station.
+  // In selectable mode a tap selects the nearest station and a horizontal drag pans along the course (or, without pan
+  // handlers, selects under the finger). A vertical pull-down gesture on the parent never changes the selected station.
   const onGrant = (e: GestureResponderEvent) => {
-    touch.current = { x: e.nativeEvent.locationX, moved: false };
-    if (!onSelectStation) select(e.nativeEvent.locationX);
+    const n = e.nativeEvent;
+    touch.current = { x: n.locationX, startPage: n.pageX, moved: false, samples: [{ x: n.pageX, t: n.timestamp }] };
+    if (!onSelectStation) select(n.locationX);
   };
   const onMove = (e: GestureResponderEvent) => {
-    if (!touch.current) return;
-    if (!onSelectStation) return select(e.nativeEvent.locationX);
-    if (Math.abs(e.nativeEvent.locationX - touch.current.x) > 6) {
-      touch.current.moved = true;
-      select(e.nativeEvent.locationX);
+    const tc = touch.current;
+    if (!tc) return;
+    const n = e.nativeEvent;
+    if (!onSelectStation) return select(n.locationX);
+    if (!tc.moved && Math.abs(n.pageX - tc.startPage) > 6) {
+      tc.moved = true;
+      if (panning) onPanStart?.();
     }
+    if (!tc.moved) return;
+    if (!panning) return select(n.locationX);
+    tc.samples.push({ x: n.pageX, t: n.timestamp });
+    if (tc.samples.length > 6) tc.samples.shift();
+    onPanMove!(((tc.startPage - n.pageX) / plotW) * viewSpan); // finger left = move toward the finish
+  };
+  const finishPan = () => {
+    const tc = touch.current;
+    touch.current = null;
+    if (!tc?.moved || !panning) return;
+    const first = tc.samples[0], last = tc.samples[tc.samples.length - 1];
+    const dt = last.t - first.t;
+    const pxPerMs = dt > 0 ? (first.x - last.x) / dt : 0;
+    onPanEnd?.(((pxPerMs * 1000) / plotW) * viewSpan);
   };
   const onRelease = () => {
-    if (onSelectStation && touch.current && !touch.current.moved) select(touch.current.x);
-    touch.current = null;
+    const tc = touch.current;
+    if (onSelectStation && tc && !tc.moved) {
+      touch.current = null;
+      select(tc.x);
+    } else if (tc?.moved && panning) {
+      finishPan();
+    } else {
+      touch.current = null;
+    }
     if (!onSelectStation) setProbe(null);
   };
 
@@ -124,7 +154,7 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
         )}
       </View>}
       {width > 0 && (
-        <View pointerEvents={compact ? 'none' : 'auto'} onStartShouldSetResponder={() => !compact} onMoveShouldSetResponder={() => true} onResponderGrant={onGrant} onResponderMove={onMove} onResponderRelease={onRelease} onResponderTerminate={() => (touch.current = null)}>
+        <View pointerEvents={compact ? 'none' : 'auto'} onStartShouldSetResponder={() => !compact} onMoveShouldSetResponder={() => true} onResponderGrant={onGrant} onResponderMove={onMove} onResponderRelease={onRelease} onResponderTerminate={finishPan}>
           <Svg width={width} height={HEIGHT}>
             <Defs>
               <LinearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
@@ -157,7 +187,7 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
                 key={st.id}
                 cx={x(st.mile)}
                 cy={y(elevAt(st.mile))}
-                r={st.id === activeStationId ? 0 : selectable ? 3 : 3.5}
+                r={st.id === activeStationId && Math.abs(st.mile - (activeMile ?? st.mile)) < 0.3 ? 0 : selectable ? 3 : 3.5}
                 fill={dark ? BRAND_BLUE : t.card}
                 stroke={st.kind === 'cutoff' ? t.amber : dark ? '#ffffff' : t.primary}
                 strokeWidth={selectable ? 1.75 : 2}

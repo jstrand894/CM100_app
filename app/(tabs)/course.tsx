@@ -137,11 +137,17 @@ const ZoomChart = memo(function ZoomChart({
   onSelect,
   center,
   progress,
+  onPanStart,
+  onPanMove,
+  onPanEnd,
 }: {
   activeId: string;
   onSelect: (id: string) => void;
   center: Animated.Value;
   progress: Animated.Value;
+  onPanStart: () => void;
+  onPanMove: (dMiles: number) => void;
+  onPanEnd: (milesPerSec: number) => void;
 }) {
   const [view, setView] = useState({ start: 0, span: ZOOM_SPAN, mile: AID_STATIONS[0].mile });
   useEffect(() => {
@@ -155,7 +161,7 @@ const ZoomChart = memo(function ZoomChart({
     const b = progress.addListener(({ value }) => { p = value; apply(); });
     return () => { center.removeListener(a); progress.removeListener(b); };
   }, [center, progress]);
-  return <ElevationChart stations={AID_STATIONS} height={185} activeStationId={activeId} onSelectStation={onSelect} tone="dark" viewStart={view.start} viewSpan={view.span} activeMile={view.mile} />;
+  return <ElevationChart stations={AID_STATIONS} height={185} activeStationId={activeId} onSelectStation={onSelect} onPanStart={onPanStart} onPanMove={onPanMove} onPanEnd={onPanEnd} tone="dark" viewStart={view.start} viewSpan={view.span} activeMile={view.mile} />;
 });
 
 export default function CourseScreen() {
@@ -190,10 +196,73 @@ export default function CourseScreen() {
   // Zoom center follows the selected station (animated); the chart subscribes to it directly so the
   // station list is not re-rendered on every animation frame.
   const center = useRef(new Animated.Value(AID_STATIONS[0].mile)).current;
+  const panning = useRef(false);
+  const activeRef = useRef(activeId);
+  const centerMile = useRef(AID_STATIONS[0].mile);
+  const panFrom = useRef({ mile: 0, id: AID_STATIONS[0].id });
   useEffect(() => {
-    const m = AID_STATIONS.find((s) => s.id === activeId)?.mile ?? 0;
-    Animated.timing(center, { toValue: m, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
-  }, [activeId, center]);
+    const sub = center.addListener(({ value }) => (centerMile.current = value));
+    return () => center.removeListener(sub);
+  }, [center]);
+  const glideTo = useCallback(
+    (mile: number, spring = false) => {
+      center.stopAnimation();
+      if (spring) Animated.spring(center, { toValue: mile, useNativeDriver: false, speed: 14, bounciness: 5 }).start();
+      else Animated.timing(center, { toValue: mile, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    },
+    [center],
+  );
+  useEffect(() => {
+    activeRef.current = activeId;
+    if (panning.current) return; // the pan is already moving the center
+    glideTo(AID_STATIONS.find((s) => s.id === activeId)?.mile ?? 0);
+  }, [activeId, glideTo]);
+
+  // Swiping the chart slides the course under the marker. The nearest station becomes active as it passes (and the list
+  // follows); on release the marker glides and snaps to a station, and a flick steps on to the next one.
+  const nearestStation = (mile: number) => AID_STATIONS.reduce((b, st) => (Math.abs(st.mile - mile) < Math.abs(b.mile - mile) ? st : b), AID_STATIONS[0]);
+  const scrollListTo = useCallback((id: string) => {
+    const r = rows.current[id];
+    if (!r) return;
+    lockUntil.current = Date.now() + 500;
+    scrollRef.current?.scrollTo({ y: Math.max(r.y - SLOT, 0), animated: true });
+  }, []);
+  const onPanStart = useCallback(() => {
+    panning.current = true;
+    center.stopAnimation((v) => (panFrom.current = { mile: v, id: nearestStation(v).id }));
+    if (isOpen.current) settle(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [center, settle]);
+  const onPanMove = useCallback(
+    (dMiles: number) => {
+      const m = Math.min(Math.max(panFrom.current.mile + dMiles, 0), 100);
+      center.setValue(m);
+      const id = nearestStation(m).id;
+      if (id !== activeRef.current) {
+        activeRef.current = id;
+        setActiveId(id);
+        scrollListTo(id);
+      }
+    },
+    [center, scrollListTo],
+  );
+  const onPanEnd = useCallback(
+    (milesPerSec: number) => {
+      panning.current = false;
+      const now = centerMile.current;
+      let idx = AID_STATIONS.indexOf(nearestStation(now + milesPerSec * 0.18));
+      // A quick flick that would land back on the station it started from steps on to the next one instead.
+      if (Math.abs(milesPerSec) > 15 && AID_STATIONS[idx].id === panFrom.current.id) {
+        idx = Math.min(Math.max(idx + (milesPerSec > 0 ? 1 : -1), 0), AID_STATIONS.length - 1);
+      }
+      const target = AID_STATIONS[idx];
+      activeRef.current = target.id;
+      setActiveId(target.id);
+      scrollListTo(target.id);
+      glideTo(target.mile, true);
+    },
+    [glideTo, scrollListTo],
+  );
 
   const panelHeight = progress.interpolate({ inputRange: [0, 1], outputRange: [0, PANEL_H] });
 
@@ -212,7 +281,7 @@ export default function CourseScreen() {
   }, []);
 
   const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    if (Date.now() < lockUntil.current) return;
+    if (panning.current || Date.now() < lockUntil.current) return;
     const y = e.nativeEvent.contentOffset.y + SLOT;
     let best = AID_STATIONS[0].id;
     let bestDist = Infinity;
@@ -258,7 +327,7 @@ export default function CourseScreen() {
         <Text style={styles.title}>Course</Text>
         <Text style={styles.sub}>Pull down to see the whole course</Text>
         <View style={styles.chart}>
-          <ZoomChart activeId={activeId} onSelect={jumpTo} center={center} progress={progress} />
+          <ZoomChart activeId={activeId} onSelect={jumpTo} center={center} progress={progress} onPanStart={onPanStart} onPanMove={onPanMove} onPanEnd={onPanEnd} />
         </View>
         <Animated.View style={{ height: panelHeight, overflow: 'hidden', opacity: progress }}>
           <View style={{ paddingHorizontal: 8, paddingTop: 4 }}>
