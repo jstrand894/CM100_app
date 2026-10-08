@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { applyTheme, loadThemePref } from '../src/settings';
@@ -10,8 +11,11 @@ export default function RootLayout() {
   useEffect(() => {
     loadThemePref().then(applyTheme);
   }, []);
+  // On a wide web window, keep the app a phone-width column in the middle instead of stretching it.
+  const column = Platform.OS === 'web' ? { flex: 1, width: '100%' as const, maxWidth: 480, alignSelf: 'center' as const } : { flex: 1 };
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: Platform.OS === 'web' ? t.border : t.bg }}>
+      <View style={column}>
       <StatusBar style="auto" />
       <Stack
         screenOptions={{
@@ -31,6 +35,7 @@ export default function RootLayout() {
         <Stack.Screen name="settings" options={{ headerShown: false }} />
         <Stack.Screen name="elevation" options={{ title: 'Elevation' }} />
       </Stack>
-    </>
+      </View>
+    </View>
   );
 }

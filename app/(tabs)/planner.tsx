@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated, Easing, LayoutAnimation, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { createElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, LayoutAnimation, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Alert } from '../../src/alert';
 import { Card, SectionTitle, tint } from '../../src/components/ui';
 import { AID_STATIONS } from '../../src/data/aidStations';
 import {
@@ -43,6 +44,35 @@ function TimeField({ minutes, onChange }: { minutes: number; onChange: (minutesO
   const scheme = useColorScheme();
   const value = new Date(2000, 0, 1, Math.floor(minutes / 60), minutes % 60);
   const apply = (d?: Date) => d && onChange(d.getHours() * 60 + d.getMinutes());
+  if (Platform.OS === 'web') {
+    // The native picker does not exist on the web; the browser's own time input does the job.
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return (
+      <View style={styles.timeBox}>
+        {createElement('input', {
+          type: 'time',
+          value: `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`,
+          'aria-label': 'Time',
+          onChange: (e: { target: { value: string } }) => {
+            const [h, m] = e.target.value.split(':').map(Number);
+            if (!Number.isNaN(h) && !Number.isNaN(m)) onChange(h * 60 + m);
+          },
+          style: {
+            fontSize: 22,
+            fontWeight: 800,
+            width: 140,
+            height: 48,
+            textAlign: 'center',
+            border: 'none',
+            borderRadius: 12,
+            background: t.primarySoft,
+            color: t.primary,
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+          },
+        })}
+      </View>
+    );
+  }
   if (Platform.OS === 'ios') {
     return (
       <View style={styles.timeBox}>
@@ -564,7 +594,7 @@ export default function PlannerScreen() {
         {AID_STATIONS.map((s, idx) => {
           const e = elapsed[s.id];
           const isLogged = mode === 'race' && logs[s.id] != null;
-          const isEst = liveActive && idx < lastLoggedIdx && !isLogged;
+          const isEst = liveActive && idx < lastLoggedIdx && !isLogged && s.kind !== 'start';
           const cutoff = CUTOFF_HOURS[s.id];
           const margin = cutoff != null ? cutoff - e : null;
           const behind = margin != null && margin < 0;

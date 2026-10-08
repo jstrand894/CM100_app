@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert } from '../src/alert';
 import { Card, DetailHeader, SectionTitle, tint } from '../src/components/ui';
 import { AID_STATIONS } from '../src/data/aidStations';
 import { MANDATORY_GEAR, RECOMMENDED_GEAR } from '../src/data/race';

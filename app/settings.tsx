@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert } from '../src/alert';
 import { Card, DetailHeader, ListRow, SectionTitle } from '../src/components/ui';
 import { agoLabel } from '../src/data/news';
 import { RACE } from '../src/data/race';
@@ -73,6 +74,8 @@ export default function SettingsScreen() {
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <DetailHeader title="Settings" />
       <ScrollView contentContainerStyle={styles.content}>
+        {Platform.OS !== 'web' && (
+          <>
         <SectionTitle>Appearance</SectionTitle>
         <Card>
           <View style={[styles.seg, { backgroundColor: t.primarySoft }]}>
@@ -88,6 +91,8 @@ export default function SettingsScreen() {
           </View>
           <Text style={[styles.hint, { color: t.muted }]}>Automatic follows your phone's light or dark setting.</Text>
         </Card>
+          </>
+        )}
 
         <SectionTitle>Pace planner</SectionTitle>
         <Card style={styles.list}>
