@@ -69,7 +69,9 @@ const TILES: { label: string; sub: string; icon: keyof typeof Ionicons.glyphMap;
   { label: 'Live tracking', sub: 'Follow your runner', icon: 'radio', href: '/map?tracking=1' },
   { label: 'Race weekend', sub: 'Schedule and shuttle', icon: 'calendar', href: '/info/schedule' },
   { label: 'Gear and drop bags', sub: 'Checklists you can tick off', icon: 'bag-handle', href: '/gear' },
+  { label: 'Crew and pacers', sub: 'Rules for support teams', icon: 'people', href: '/info/crew' },
   { label: 'Emergency', sub: 'Hospitals and urgent care', icon: 'medkit', href: '/info/emergency' },
+  { label: 'Food and lodging', sub: 'Wilsall, Big Timber, Clyde Park', icon: 'restaurant', href: '/info/local' },
 ];
 
 // Race-weekend card: what is next, plus shortcuts that matter at that point in the weekend.

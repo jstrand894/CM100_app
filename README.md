@@ -21,11 +21,10 @@ keep working with little or no cell service, because most of the course has none
 
 | Tab | What it does |
 |---|---|
-| **Home** | Live countdown to the start, a race weekend card once race week begins (next event, shortcuts), the latest post from the race director, typical or forecast weather, and quick links. |
+| **Home** | Live countdown to the start, a race weekend card once race week begins (next event, shortcuts), the latest post from the race director, typical or forecast weather, and quick links to the schedule, gear checklists, crew and pacer rules, emergency contacts, food and lodging, and the lottery. |
 | **Course** | An interactive elevation profile you can swipe along, with every aid station, section distance, climb and descent, crew and pacer access, drop bags and cutoffs. Tap a station for the full details. |
 | **Map** | The course line and aid stations on a map (Terrain, Hybrid or Satellite), your own location, GPX download, and a link to live runner tracking. |
 | **Planner** | Plan a finish time and see when your runner reaches each station, then track them on race day. See below. |
-| **Info** | Everything that is reference material: schedule and shuttle, race news, weather, gear and drop bag checklists, crew and pacer rules, emergency contacts, food and lodging, the lottery, and Settings. |
 
 ### Pace planner
 
@@ -57,7 +56,7 @@ These are estimates, not predictions. Weather, conditions and aid station stops 
 
 ### Settings
 
-Reached from the gear icon on Home or from the Info tab: Automatic, Light or Dark appearance, and resets for race day
+Reached from the gear icon on Home: Automatic, Light or Dark appearance, and resets for race day
 times, the goal time, gear checkmarks and saved news and weather.
 
 ## Tech
@@ -108,7 +107,7 @@ Differences from the mobile app:
 ## Project layout
 
 ```
-app/                 Screens (Expo Router). (tabs)/ holds the five tabs
+app/                 Screens (Expo Router). (tabs)/ holds the four tabs
   aid/[id].tsx       Aid station detail
   info/[slug].tsx    Schedule, crew rules, emergency, local info
   settings.tsx       Settings
