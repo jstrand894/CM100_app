@@ -58,16 +58,78 @@ export function DetailHeader({ title, subtitle, children }: { title: string; sub
   );
 }
 
+export function ListRow({
+  icon,
+  title,
+  sub,
+  onPress,
+  danger,
+  last,
+  badge,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  sub?: string;
+  onPress?: () => void;
+  danger?: boolean;
+  last?: boolean;
+  badge?: string;
+}) {
+  const t = useTheme();
+  const color = danger ? t.red : t.primary;
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      style={({ pressed }) => [styles.row, !last && { borderBottomWidth: 1, borderBottomColor: t.border }, pressed && { opacity: 0.6 }]}
+      accessibilityRole={onPress ? 'button' : undefined}
+    >
+      <View style={[styles.rowIcon, { backgroundColor: danger ? t.red + '1f' : t.primarySoft }]}>
+        <Ionicons name={icon} size={19} color={color} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.rowTitle, { color: danger ? t.red : t.text }]}>{title}</Text>
+        {sub ? <Text style={[styles.rowSub, { color: t.muted }]}>{sub}</Text> : null}
+      </View>
+      {badge ? (
+        <View style={[styles.badge, { backgroundColor: t.accent }]}>
+          <Text style={styles.badgeText}>{badge}</Text>
+        </View>
+      ) : null}
+      {onPress && !danger && <Ionicons name="chevron-forward" size={18} color={t.muted} />}
+    </Pressable>
+  );
+}
+
+// Small notice shown while the phone has no connection. Saved data keeps working, so say what still does.
+export function OfflineNotice({ children, style }: { children: string; style?: ViewStyle }) {
+  const t = useTheme();
+  return (
+    <View style={[styles.offline, { backgroundColor: t.accentSoft }, style]} accessibilityRole="alert">
+      <Ionicons name="cloud-offline" size={18} color={t.accent} />
+      <Text style={[styles.offlineText, { color: t.text }]}>{children}</Text>
+    </View>
+  );
+}
+
 // Soft tinted background for a status color, e.g. a chip behind green text.
 export const tint = (hex: string, alpha = 0.14) =>
   hex + Math.round(alpha * 255).toString(16).padStart(2, '0');
 
 const styles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, minHeight: 60, paddingVertical: 10 },
+  rowIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  rowTitle: { fontSize: 16, fontWeight: '700' },
+  rowSub: { fontSize: 13, marginTop: 1 },
+  badge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+  badgeText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
   header: { backgroundColor: BRAND_BLUE, paddingHorizontal: 20, paddingBottom: 22, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   back: { flexDirection: 'row', alignItems: 'center', marginLeft: -6, marginBottom: 6, alignSelf: 'flex-start' },
   backText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
   headerTitle: { color: '#ffffff', fontSize: 28, fontWeight: '800' },
   headerSub: { color: '#bcd6e6', fontSize: 14, fontWeight: '600', marginTop: 4 },
+  offline: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  offlineText: { flex: 1, fontSize: 13, fontWeight: '600', lineHeight: 18 },
   card: { borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 12 },
   sectionTitle: { fontSize: 12, fontWeight: '700', letterSpacing: 0.8, marginTop: 12, marginBottom: 8, marginLeft: 4 },
   button: { paddingVertical: 14, paddingHorizontal: 18, borderRadius: 12, alignItems: 'center' },

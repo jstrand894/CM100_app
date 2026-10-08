@@ -88,7 +88,7 @@ export const AID_STATIONS: AidStation[] = [
   {
     id: "cow-camp-1",
     code: "CC",
-    name: "Cow Camp (first visit)",
+    name: "Cow Camp (1st visit)",
     kind: "aid",
     mile: 32.1,
     gainFt: 3385,
@@ -145,7 +145,7 @@ export const AID_STATIONS: AidStation[] = [
   {
     id: "cow-camp-2",
     code: "CC",
-    name: "Cow Camp (second visit)",
+    name: "Cow Camp (2nd visit)",
     kind: "aid",
     mile: 55.3,
     gainFt: 432,

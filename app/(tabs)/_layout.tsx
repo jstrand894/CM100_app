@@ -26,7 +26,9 @@ export default function TabLayout() {
       <Tabs.Screen name="course" options={{ title: 'Course', headerShown: false, tabBarIcon: mciIcon('chart-areaspline') }} />
       <Tabs.Screen name="map" options={{ title: 'Map', headerShown: false, tabBarIcon: icon('map') }} />
       <Tabs.Screen name="planner" options={{ title: 'Planner', headerShown: false, tabBarIcon: icon('timer') }} />
-      <Tabs.Screen name="lottery" options={{ title: 'Lottery', headerShown: false, tabBarIcon: icon('ticket') }} />
+      <Tabs.Screen name="guide" options={{ title: 'Info', headerShown: false, tabBarIcon: icon('information-circle') }} />
+      {/* Still a route (Home links to it), just not a tab. */}
+      <Tabs.Screen name="lottery" options={{ href: null }} />
     </Tabs>
   );
 }

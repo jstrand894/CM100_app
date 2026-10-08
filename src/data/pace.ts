@@ -80,14 +80,88 @@ export function durationLabel(hrs: number): string {
   return h > 0 ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`;
 }
 
-// Finds the finish time (hours) whose model has the runner at `stationId` after `elapsed` hours.
-// Used by live mode: log when a runner really reached a station, get the pace-implied finish.
-export function impliedFinishHours(stationId: string, elapsed: number): number {
-  let lo = 12, hi = 60;
-  for (let i = 0; i < 40; i++) {
-    const mid = (lo + hi) / 2;
-    if ((elapsedHours(mid)[stationId] ?? 0) < elapsed) lo = mid;
-    else hi = mid;
+/**
+ * Live projection from every time logged so far.
+ *
+ * The finisher curves already carry the course's shape (climbs are slow legs, descents fast ones), so a runner is
+ * always compared leg by leg against a curve, never extrapolated at one flat pace. Steps:
+ *  1. Fit the curve (finish time) that best matches all logged splits. Recent splits count more, since fade shows up late.
+ *  2. Early on, lean on the runner's goal: a fast first leg says little about the other 90 miles. The fit takes over
+ *     as more of the race is behind them.
+ *  3. Anchor to the logged times: stations between logged ones are interpolated along the curve's leg shape, and
+ *     stations ahead continue from the last logged time using the curve's remaining legs.
+ */
+export interface Projection {
+  finishHours: number;
+  /** Elapsed hours at every station (including logged ones, which equal what was logged). */
+  elapsed: Record<string, number>;
+}
+
+const FIT_MIN = 20, FIT_MAX = 45, FIT_STEP = 0.02;
+const GOAL_BLEND_UNTIL = 0.45; // share of the race behind the runner at which the logged pace is fully trusted
+const RECENCY_HALF_LIFE = 2; // a logged point this many logged points back counts half as much
+
+export function projectFromLogs(logged: Record<string, number>, goalHours: number): Projection {
+  const ids = ['start', ...STATION_ORDER];
+  const pts = ids.slice(1).filter((id) => logged[id] != null).map((id) => ({ id, e: logged[id] }));
+  if (pts.length === 0) {
+    const base = elapsedHours(goalHours);
+    return { finishHours: goalHours, elapsed: base };
   }
-  return (lo + hi) / 2;
+
+  // 1. Weighted fit of the finish time to all logged points (relative error, newest weighted most).
+  let best = goalHours, bestLoss = Infinity;
+  for (let F = FIT_MIN; F <= FIT_MAX; F += FIT_STEP) {
+    const b = elapsedHours(F);
+    let loss = 0;
+    pts.forEach((p, k) => {
+      const w = Math.pow(0.5, (pts.length - 1 - k) / RECENCY_HALF_LIFE);
+      const r = (p.e - b[p.id]) / b[p.id];
+      loss += w * r * r;
+    });
+    if (loss < bestLoss) {
+      bestLoss = loss;
+      best = F;
+    }
+  }
+
+  // 2. Blend with the goal while little of the race has been run.
+  const last = pts[pts.length - 1];
+  const progress = elapsedHours(best)[last.id] / best;
+  const trust = Math.min(1, Math.pow(progress / GOAL_BLEND_UNTIL, 1.5)); // eases in: little weight early, most by halfway
+  const F = goalHours + (best - goalHours) * trust;
+  const b = elapsedHours(F);
+
+  // 3. Anchor to the logged times along the curve's leg shape.
+  const anchors = [{ id: 'start', e: 0 }, ...pts];
+  const out: Record<string, number> = { start: 0 };
+  let a = 0; // index of the anchor at or before the current station
+  ids.forEach((id, idx) => {
+    if (idx === 0) return;
+    while (a + 1 < anchors.length && ids.indexOf(anchors[a + 1].id) <= idx) a++;
+    const lo = anchors[a];
+    const hi = anchors[a + 1];
+    if (hi) {
+      const span = b[hi.id] - b[lo.id];
+      out[id] = span > 0 ? lo.e + ((b[id] - b[lo.id]) * (hi.e - lo.e)) / span : lo.e;
+    } else {
+      out[id] = lo.e + (b[id] - b[lo.id]);
+    }
+  });
+  return { finishHours: out.finish, elapsed: out };
+}
+
+/**
+ * Crew timing for one crewed station: when to leave the previous crew stop, and how much cushion that leaves.
+ * `elapsed` is hours from the start at every station (a projection, or the plan for a goal time).
+ * `slackMin` below zero means crew cannot make it even leaving the moment the runner does.
+ */
+export function crewLeg(id: string, elapsed: Record<string, number>) {
+  const cd = CREW_DRIVE.find((d) => d.id === id);
+  if (!cd) return null;
+  const hike = (x: string) => CREW_DRIVE.find((d) => d.id === x)?.hikeMinutes ?? 0;
+  const arrive = elapsed[id] * 60 - hike(id);
+  const leave = elapsed[cd.fromId] * 60 + (cd.fromId === 'start' ? 0 : AID_STOP_MINUTES) + hike(cd.fromId);
+  const slackMin = arrive - leave - cd.minutes;
+  return { fromId: cd.fromId, driveMinutes: cd.minutes, approx: !!cd.approx, slackMin, leaveByMin: leave + slackMin };
 }

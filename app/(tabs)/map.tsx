@@ -8,6 +8,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Animated, Easing, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { MapType, Marker, Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { OfflineNotice } from '../../src/components/ui';
+import { useOnline } from '../../src/data/online';
 import { AID_STATIONS } from '../../src/data/aidStations';
 import course from '../../src/data/course.json';
 import { RACE } from '../../src/data/race';
@@ -43,6 +45,7 @@ export default function MapScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
+  const online = useOnline();
   const [mapType, setMapType] = useState<MapType>('standard');
   const [hasLocation, setHasLocation] = useState(false);
   // Custom marker views are snapshotted by the native map, so keep tracking on until they have drawn.
@@ -165,6 +168,11 @@ export default function MapScreen() {
           </Marker>
         ))}
       </MapView>
+      {!online && (
+        <OfflineNotice style={{ position: 'absolute', top: insets.top + 8, left: 12, right: 12 }}>
+          No signal. The map background may be blank, but the course line, aid stations and your location still show.
+        </OfflineNotice>
+      )}
 
       <View style={[styles.floatingBtns, { top: insets.top + 76 }]}>
         <RoundButton icon="layers" label="Map layers" onPress={() => setLayersOpen((v) => !v)} active={layersOpen} />
@@ -243,7 +251,13 @@ export default function MapScreen() {
             Runners carry race-provided GPS trackers, and positions appear live on Trackleaders. It needs cell service, so crews in dead
             zones will see stale positions.
           </Text>
-          <Pressable onPress={() => WebBrowser.openBrowserAsync(RACE.trackingUrl)} style={[styles.trackBtn, { backgroundColor: t.primary }]}>
+          <Pressable
+            onPress={() =>
+              online
+                ? WebBrowser.openBrowserAsync(RACE.trackingUrl)
+                : Alert.alert('No signal', 'Live tracking needs cell service or Wi-Fi. Try again when you have a connection.')
+            }
+            style={[styles.trackBtn, { backgroundColor: t.primary }]}>
             <Text style={styles.trackBtnText}>Open live tracking</Text>
             <Ionicons name="open-outline" size={16} color="#ffffff" />
           </Pressable>

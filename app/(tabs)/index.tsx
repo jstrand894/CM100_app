@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Image, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { HeroRidge, RIDGE_FRONT } from '../../src/components/HeroRidge';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { OfflineNotice } from '../../src/components/ui';
+import { useOnline } from '../../src/data/online';
 import { LOTTERY } from '../../src/data/lottery';
 import { agoLabel, formatPostDate, useNews } from '../../src/data/news';
 import { HIGHLIGHTS, RACE } from '../../src/data/race';
@@ -67,9 +69,7 @@ const TILES: { label: string; sub: string; icon: keyof typeof Ionicons.glyphMap;
   { label: 'Live tracking', sub: 'Follow your runner', icon: 'radio', href: '/map?tracking=1' },
   { label: 'Race weekend', sub: 'Schedule and shuttle', icon: 'calendar', href: '/info/schedule' },
   { label: 'Gear and drop bags', sub: 'Checklists you can tick off', icon: 'bag-handle', href: '/gear' },
-  { label: 'Crew and pacers', sub: 'Rules for support teams', icon: 'people', href: '/info/crew' },
   { label: 'Emergency', sub: 'Hospitals and urgent care', icon: 'medkit', href: '/info/emergency' },
-  { label: 'Food and lodging', sub: 'Wilsall, Big Timber, Clyde Park', icon: 'restaurant', href: '/info/local' },
 ];
 
 // Race-weekend card: what is next, plus shortcuts that matter at that point in the weekend.
@@ -139,7 +139,7 @@ function WeekendCard({ now, phase }: { now: number; phase: Phase }) {
 // Forecast once it exists (about two weeks out), otherwise what the last five years looked like on race weekend.
 function WeatherCard() {
   const t = useTheme();
-  const { forecast, history, forecastOpen } = useWeather();
+  const { forecast, history, forecastOpen, updatedAt, failed } = useWeather();
   const useForecast = forecastOpen && !!forecast;
   const rows = SPOTS.map((s) => {
     if (useForecast) {
@@ -178,7 +178,7 @@ function WeatherCard() {
         </View>
       ) : (
         <Text style={[styles.newsBody, { color: t.muted }]}>
-          It can be 90°F and turn to hail and snow within an hour. Tap for typical conditions and the race day forecast.
+          {failed ? 'No signal and nothing saved yet. ' : ''}It can be 90°F and turn to hail and snow within an hour. Tap for typical conditions and the race day forecast.
         </Text>
       )}
     </Pressable>
@@ -198,6 +198,7 @@ export default function HomeScreen() {
   const c = countdown(now, phase);
   const lottery = phase === 'far' ? lotteryLine(now) : null;
   const focused = useIsFocused();
+  const online = useOnline();
   const news = useNews();
   const latest = news.posts[0];
   // Pull down to check for new news. Keep the spinner up briefly even when the check is instant.
@@ -208,6 +209,8 @@ export default function HomeScreen() {
     setPulling(false);
   }, [news.refresh]);
   const scrollY = useRef(new Animated.Value(0)).current;
+  // The gear sits over the fixed hero, so it only works while the hero is showing.
+  const [gearOn, setGearOn] = useState(true);
 
   const heroHeight = insets.top + 238;
   // Hero stays fixed; only stretches slightly when pulling down past the top.
@@ -241,7 +244,10 @@ export default function HomeScreen() {
       <Animated.ScrollView
         style={StyleSheet.absoluteFill}
         scrollEventThrottle={16}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: true,
+          listener: (e: any) => setGearOn(e.nativeEvent.contentOffset.y < 40),
+        })}
         contentInsetAdjustmentBehavior="never"
         refreshControl={<RefreshControl refreshing={pulling || news.refreshing} onRefresh={onPull} tintColor={BRAND_BLUE} />}
         showsVerticalScrollIndicator={false}
@@ -249,6 +255,11 @@ export default function HomeScreen() {
         <View style={{ height: heroHeight - 36 }} />
         <View style={[styles.sheet, { backgroundColor: t.bg }]}>
           <View style={[styles.grabber, { backgroundColor: t.border }]} />
+        {!online && (
+          <OfflineNotice style={{ marginBottom: 12 }}>
+            No signal. The countdown, schedule, course, gear and planner all work offline. News and weather show what was last saved.
+          </OfflineNotice>
+        )}
         <View style={[styles.countdown, { backgroundColor: t.card, borderColor: t.border }]}>
           {c.kind === 'units' ? (
             <>
@@ -369,6 +380,14 @@ export default function HomeScreen() {
         </Text>
         </View>
       </Animated.ScrollView>
+      <Animated.View
+        pointerEvents={gearOn ? 'auto' : 'none'}
+        style={[styles.gear, { top: insets.top + 8, opacity: scrollY.interpolate({ inputRange: [0, 60], outputRange: [1, 0], extrapolate: 'clamp' }) }]}
+      >
+        <Pressable onPress={() => router.push('/settings')} hitSlop={10} style={styles.gearBtn} accessibilityRole="button" accessibilityLabel="Settings">
+          <Ionicons name="settings-outline" size={22} color={BRAND_BLUE} />
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }
@@ -376,6 +395,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   heroBg: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: HERO_BG },
   heroOverscroll: { position: 'absolute', top: -800, left: 0, right: 0, height: 800, backgroundColor: HERO_BG },
+  gear: { position: 'absolute', right: 14 },
+  gearBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(11,74,107,0.10)' },
   hero: { position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center' },
   sheet: {
     paddingHorizontal: 16,
@@ -442,6 +463,7 @@ const styles = StyleSheet.create({
   wxCol: { flex: 1, paddingLeft: 12 },
   wxLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' },
   wxTemp: { fontSize: 24, fontWeight: '900', marginTop: 2, fontVariant: ['tabular-nums'] },
+  wxStale: { fontSize: 12, fontWeight: '600', marginTop: 10, textAlign: 'center' },
   wxNote: { fontSize: 12, fontWeight: '600', marginTop: 2 },
   heading: { fontSize: 12, fontWeight: '800', letterSpacing: 0.9, marginTop: 24, marginBottom: 10, marginLeft: 4 },
   note: { borderRadius: 16, borderWidth: 1, padding: 14, marginBottom: 10 },

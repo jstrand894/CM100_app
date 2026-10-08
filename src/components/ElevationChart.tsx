@@ -38,7 +38,7 @@ interface Props {
   compact?: boolean;
 }
 
-const shortName = (n: string) => n.replace(/^(Start|Finish): /, '').replace(/ \((first|second) visit\)/, ' ($1)');
+const shortName = (n: string) => n.replace(/^(Start|Finish): /, '').replace(/ \((1st|2nd) visit\)/, ' ($1)');
 
 export function ElevationChart({ stations, height = 230, activeStationId = null, onSelectStation, tone = 'light', viewStart = 0, viewSpan = 100, activeMile, onPanStart, onPanMove, onPanEnd, compact = false }: Props) {
   const theme = useTheme();
