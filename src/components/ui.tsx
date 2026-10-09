@@ -112,11 +112,52 @@ export function OfflineNotice({ children, style }: { children: string; style?: V
   );
 }
 
+/** Collapsible card: icon, title, one-line status and a chevron. Children show when `open`. */
+export function Section({ icon, title, sub, open, onToggle, progress, children }: { icon: keyof typeof Ionicons.glyphMap; title: string; sub?: string; open: boolean; onToggle: () => void; progress?: number; children: ReactNode }) {
+  const t = useTheme();
+  const done = progress === 1;
+  return (
+    <Card style={{ padding: 0, overflow: 'hidden' }}>
+      <Pressable
+        onPress={onToggle}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={sub ? `${title}. ${sub}` : title}
+        style={({ pressed }) => [styles.secHead, pressed && { opacity: 0.7 }]}
+      >
+        <View style={styles.secTop}>
+          <View style={[styles.secIcon, { backgroundColor: done ? tint(t.green, 0.16) : t.primarySoft }]}>
+            <Ionicons name={done ? 'checkmark' : icon} size={22} color={done ? t.green : t.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.secTitle, { color: t.text }]}>{title}</Text>
+            {sub ? <Text style={[styles.secSub, { color: done ? t.green : t.muted }]}>{sub}</Text> : null}
+          </View>
+          <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={22} color={t.muted} />
+        </View>
+        {progress != null && (
+          <View style={[styles.secBar, { backgroundColor: t.primarySoft }]}>
+            <View style={[styles.secBarFill, { width: `${progress * 100}%`, backgroundColor: done ? t.green : t.primary }]} />
+          </View>
+        )}
+      </Pressable>
+      {open && <View style={{ borderTopWidth: 1, borderTopColor: t.border, paddingHorizontal: 16 }}>{children}</View>}
+    </Card>
+  );
+}
+
 // Soft tinted background for a status color, e.g. a chip behind green text.
 export const tint = (hex: string, alpha = 0.14) =>
   hex + Math.round(alpha * 255).toString(16).padStart(2, '0');
 
 const styles = StyleSheet.create({
+  secHead: { padding: 16 },
+  secTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  secIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  secTitle: { fontSize: 17, fontWeight: '800' },
+  secSub: { fontSize: 13, fontWeight: '600', marginTop: 1 },
+  secBar: { height: 8, borderRadius: 4, overflow: 'hidden', marginTop: 14 },
+  secBarFill: { height: 8, borderRadius: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, minHeight: 60, paddingVertical: 10 },
   rowIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   rowTitle: { fontSize: 16, fontWeight: '700' },

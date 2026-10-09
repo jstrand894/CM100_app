@@ -20,14 +20,14 @@ export default function TabLayout() {
         headerStyle: { backgroundColor: t.bg },
         headerTintColor: t.text,
         headerShadowVisible: false,
+        animation: 'fade',
+        sceneStyle: { backgroundColor: t.bg },
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Home', headerShown: false, tabBarIcon: icon('home') }} />
       <Tabs.Screen name="course" options={{ title: 'Course', headerShown: false, tabBarIcon: mciIcon('chart-areaspline') }} />
       <Tabs.Screen name="map" options={{ title: 'Map', headerShown: false, tabBarIcon: icon('map') }} />
       <Tabs.Screen name="planner" options={{ title: 'Planner', headerShown: false, tabBarIcon: icon('timer') }} />
-      {/* Still a route (Home links to it), just not a tab. */}
-      <Tabs.Screen name="lottery" options={{ href: null }} />
     </Tabs>
   );
 }
