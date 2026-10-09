@@ -50,6 +50,9 @@
       ],
       "@react-native-community/datetimepicker"
     ],
-    "scheme": "cm100"
+    "scheme": "cm100",
+    "experiments": {
+      "baseUrl": "/CM100_app"
+    }
   }
 }
