@@ -65,13 +65,13 @@ function lotteryLine(now: number): string | null {
   return null;
 }
 
-const TILES: { label: string; sub: string; icon: keyof typeof Ionicons.glyphMap; href: Href; urgent?: boolean }[] = [
-  { label: 'Live tracking', sub: 'Follow your runner', icon: 'radio', href: '/map?tracking=1' },
-  { label: 'Race weekend', sub: 'Schedule and shuttle', icon: 'calendar', href: '/info/schedule' },
-  { label: 'Gear and drop bags', sub: 'Checklists', icon: 'bag-handle', href: '/gear' },
-  { label: 'Crew and pacers', sub: 'Rules for support teams', icon: 'people', href: '/info/crew' },
-  { label: 'Emergency', sub: 'Hospitals and 911', icon: 'medkit', href: '/info/emergency', urgent: true },
-  { label: 'Food and lodging', sub: 'Wilsall, Big Timber, Clyde Park', icon: 'restaurant', href: '/info/local' },
+const TILES: { label: string; sub: string; href: Href; urgent?: boolean }[] = [
+  { label: 'Live tracking', sub: 'Follow your runner', href: '/map?tracking=1' },
+  { label: 'Race weekend', sub: 'Schedule and shuttle', href: '/info/schedule' },
+  { label: 'Gear and drop bags', sub: 'Checklists', href: '/gear' },
+  { label: 'Crew and pacers', sub: 'Rules for support teams', href: '/info/crew' },
+  { label: 'Emergency', sub: 'Hospitals and 911', href: '/info/emergency', urgent: true },
+  { label: 'Food and lodging', sub: 'Wilsall, Big Timber, Clyde Park', href: '/info/local' },
 ];
 
 // Race-weekend card: what is next, plus shortcuts that matter at that point in the weekend.
@@ -333,7 +333,6 @@ export default function HomeScreen() {
               accessibilityLabel={`${tile.label}. ${tile.sub}`}
               style={({ pressed }) => [styles.tile, { backgroundColor: tile.urgent ? '#b91c1c' : BRAND_BLUE }, pressed && { opacity: 0.85 }]}
             >
-              <Ionicons name={tile.icon} size={72} color="rgba(255,255,255,0.16)" style={styles.tileWatermark} />
               <Text style={styles.tileLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{tile.label}</Text>
               <Text style={styles.tileSub} numberOfLines={1}>{tile.sub}</Text>
             </Pressable>
@@ -443,7 +442,6 @@ const styles = StyleSheet.create({
   newsFoot: { fontSize: 12, fontWeight: '600', marginTop: 8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   tile: { width: '48%', flexGrow: 1, minHeight: 76, justifyContent: 'flex-end', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, overflow: 'hidden' },
-  tileWatermark: { position: 'absolute', right: -8, top: -6 },
   tileLabel: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
   tileSub: { color: 'rgba(255,255,255,0.78)', fontSize: 12, marginTop: 1 },
   weekend: { borderRadius: 18, borderWidth: 1, padding: 14, marginTop: 14 },
