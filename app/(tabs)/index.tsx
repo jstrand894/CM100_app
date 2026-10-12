@@ -6,13 +6,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Image, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { HeroRidge, RIDGE_FRONT } from '../../src/components/HeroRidge';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { OfflineNotice, tint } from '../../src/components/ui';
+import { Collapsible, OfflineNotice, tint } from '../../src/components/ui';
 import { OfflineAction, WelcomeModal } from '../../src/components/Welcome';
 import { useOfflinePrep } from '../../src/offline';
-import { useNotifications } from '../../src/data/notifications';
+import { NEWS_PREFIX, useNotifications } from '../../src/data/notifications';
 import { useOnline } from '../../src/data/online';
 import { LOTTERY } from '../../src/data/lottery';
-import { agoLabel, formatPostDate, useNews } from '../../src/data/news';
+import { agoLabel, formatPostDate } from '../../src/data/news';
 import { HIGHLIGHTS, RACE } from '../../src/data/race';
 import { describeCode, SPOTS, useWeather } from '../../src/data/weather';
 import { clockDuration, CUTOFF_MS, nowMs, Phase, phaseAt, shortDuration, START_MS, upcoming } from '../../src/data/weekend';
@@ -205,8 +205,9 @@ export default function HomeScreen() {
   const lottery = phase === 'far' ? lotteryLine(now) : null;
   const focused = useIsFocused();
   const online = useOnline();
-  const news = useNews();
   const notices = useNotifications();
+  const news = notices.news;
+  const newsUnread = notices.items.filter((n) => n.id.startsWith(NEWS_PREFIX) && !notices.isRead(n.id)).length;
   const prep = useOfflinePrep();
   const [prepOpen, setPrepOpen] = useState(false);
   // Remember whether the countdown was left open; it starts collapsed so it does not dominate the screen.
@@ -225,9 +226,9 @@ export default function HomeScreen() {
   const [pulling, setPulling] = useState(false);
   const onPull = useCallback(async () => {
     setPulling(true);
-    await Promise.all([news.refresh(), new Promise((r) => setTimeout(r, 700))]);
+    await Promise.all([notices.refresh(), new Promise((r) => setTimeout(r, 700))]);
     setPulling(false);
-  }, [news.refresh]);
+  }, [notices.refresh]);
   const scrollY = useRef(new Animated.Value(0)).current;
   // The gear sits over the fixed hero, so it only works while the hero is showing.
   const [gearOn, setGearOn] = useState(true);
@@ -269,7 +270,7 @@ export default function HomeScreen() {
           listener: (e: any) => setGearOn(e.nativeEvent.contentOffset.y < 40),
         })}
         contentInsetAdjustmentBehavior="never"
-        refreshControl={<RefreshControl refreshing={pulling || news.refreshing} onRefresh={onPull} tintColor={BRAND_BLUE} />}
+        refreshControl={<RefreshControl refreshing={pulling || notices.refreshing} onRefresh={onPull} tintColor={BRAND_BLUE} />}
         showsVerticalScrollIndicator={false}
       >
         <View style={{ height: heroHeight - 36 }} />
@@ -288,17 +289,17 @@ export default function HomeScreen() {
               <Text style={[styles.newsKicker, { color: t.text, flex: 1 }]}>SAVE FOR OFFLINE</Text>
               <Ionicons name={prepOpen ? 'chevron-up' : 'chevron-down'} size={18} color={t.muted} />
             </Pressable>
-            {prepOpen && (
-              <View style={{ marginTop: 8 }}>
+            <Collapsible open={prepOpen}>
+              <View style={{ paddingTop: 8, paddingBottom: 4 }}>
                 <Text style={[styles.newsBody, { color: t.muted, marginBottom: 10 }]}>
                   You have service now. Save news, weather and announcements before you head out of range.
                 </Text>
                 <OfflineAction prep={prep} compact />
               </View>
-            )}
+            </Collapsible>
           </View>
         )}
-        <View style={[styles.countdown, { backgroundColor: t.card, borderColor: t.border }, !countOpen && { paddingVertical: 10 }]}>
+        <View style={[styles.countdown, { backgroundColor: t.card, borderColor: t.border }]}>
           <Pressable
             onPress={toggleCount}
             accessibilityRole="button"
@@ -312,8 +313,7 @@ export default function HomeScreen() {
             </Text>
             <Ionicons name={countOpen ? 'chevron-up' : 'chevron-down'} size={18} color={t.muted} />
           </Pressable>
-          {countOpen && (
-            <>
+          <Collapsible open={countOpen} style={{ alignItems: 'center', paddingBottom: 8 }}>
               {c.kind === 'units' ? (
                 <>
                   <View style={[styles.units, { marginTop: 8 }]}>
@@ -333,8 +333,7 @@ export default function HomeScreen() {
                   <Text style={[styles.countSmall, { color: t.muted }]}>{c.small}</Text>
                 </>
               )}
-            </>
-          )}
+          </Collapsible>
           {lottery && (
             <Pressable onPress={() => router.push('/lottery')} style={[styles.lotteryPill, { backgroundColor: t.accentSoft }]}>
               <Ionicons name="ticket" size={14} color={t.accent} />
@@ -347,8 +346,8 @@ export default function HomeScreen() {
 
         {(latest || news.configured || news.isSample) && (
           <Pressable
-            onPress={() => router.push('/news')}
-            accessibilityLabel="Open race news"
+            onPress={() => router.push('/notifications')}
+            accessibilityLabel="Open notifications"
             style={({ pressed }) => [styles.news, { backgroundColor: t.card, borderColor: latest?.urgent ? t.accent : t.border, borderWidth: latest?.urgent ? 2 : 1 }, pressed && { opacity: 0.85 }]}
           >
             <View style={styles.newsTop}>
@@ -356,9 +355,9 @@ export default function HomeScreen() {
                 <Ionicons name="megaphone" size={18} color={t.accent} />
               </View>
               <Text style={[styles.newsKicker, { color: t.muted }]}>LATEST FROM THE RACE DIRECTOR</Text>
-              {news.unread > 0 && (
+              {newsUnread > 0 && (
                 <View style={[styles.badge, { backgroundColor: t.accent }]}>
-                  <Text style={styles.badgeText}>{news.unread} new</Text>
+                  <Text style={styles.badgeText}>{newsUnread} new</Text>
                 </View>
               )}
             </View>
@@ -372,7 +371,7 @@ export default function HomeScreen() {
                     {u.text(latest.body)}
                   </Text>
                 )}
-                <Text style={[styles.newsFoot, { color: t.muted }]}>{`${formatPostDate(latest.date)} · updated ${agoLabel(news.updatedAt)} · all news`}</Text>
+                <Text style={[styles.newsFoot, { color: t.muted }]}>{`${formatPostDate(latest.date)} · updated ${agoLabel(news.updatedAt)} · all notifications`}</Text>
               </>
             ) : (
               <Text style={[styles.newsBody, { color: t.muted }]}>No news yet. Tap to check for updates.</Text>
@@ -496,7 +495,7 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND_BLUE,
   },
   heroDate: { color: '#ffffff', fontSize: 14, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase' },
-  countdown: { borderRadius: 18, borderWidth: 1, paddingVertical: 18, alignItems: 'center' },
+  countdown: { borderRadius: 18, borderWidth: 1, paddingVertical: 10, alignItems: 'center' },
   units: { flexDirection: 'row', alignSelf: 'stretch', paddingHorizontal: 10, marginBottom: 8 },
   unit: { flex: 1, alignItems: 'center' },
   unitValue: { fontSize: 30, fontWeight: '900', lineHeight: 40, fontVariant: ['tabular-nums'] },

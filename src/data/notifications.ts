@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useState } from 'react';
+import { useNews } from './news';
 
 // Announcements live in public/notifications.json, which GitHub Pages serves next to the web app.
 // Edit that file and merge to main: every phone picks it up next time it opens the app. No app update needed.
@@ -7,6 +8,8 @@ export const NOTIFICATIONS_URL = 'https://jstrand894.github.io/CM100_app/notific
 
 export const CACHE_KEY = 'cm100.notifications.cache';
 const READ_KEY = 'cm100.notifications.read';
+
+export const NEWS_PREFIX = 'news|';
 
 export interface Notice {
   id: string;
@@ -105,8 +108,25 @@ export function useNotifications() {
     };
   }, []);
 
-  const items = [...state.remote, WELCOME].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  // Race director posts (the Google Sheet) share the inbox, so there is one place to look.
+  const news = useNews();
+  const newsItems: Notice[] = news.posts.map((p) => ({ id: `${NEWS_PREFIX}${p.id}`, date: p.date, title: p.title, body: p.body, link: p.link, urgent: p.urgent }));
+  const items = [...state.remote, ...newsItems, WELCOME].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
   const unread = items.filter((n) => !state.read.includes(n.id)).length;
   const isRead = useCallback((id: string) => state.read.includes(id), [state.read]);
-  return { items, unread, isRead, ...state, refresh: refreshNotifications, markRead };
+  const refresh = useCallback(async () => {
+    await Promise.all([refreshNotifications(), news.refresh()]);
+  }, [news.refresh]);
+  return {
+    ...state,
+    items,
+    unread,
+    isRead,
+    markRead,
+    refresh,
+    news,
+    refreshing: state.refreshing || news.refreshing,
+    failed: state.failed || news.failed,
+    updatedAt: Math.max(state.updatedAt ?? 0, news.updatedAt ?? 0) || null,
+  };
 }

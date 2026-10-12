@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { ReactNode, useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BRAND_BLUE, useTheme } from '../theme';
 
@@ -176,3 +176,19 @@ const styles = StyleSheet.create({
   button: { paddingVertical: 14, paddingHorizontal: 18, borderRadius: 12, alignItems: 'center' },
   buttonText: { fontSize: 16, fontWeight: '700' },
 });
+
+/** Height-animated container: content is measured once, then slides open and closed. */
+export function Collapsible({ open, children, style }: { open: boolean; children: ReactNode; style?: ViewStyle }) {
+  const [h, setH] = useState(0);
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(anim, { toValue: open ? h : 0, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  }, [open, h, anim]);
+  return (
+    <Animated.View style={{ height: anim, overflow: 'hidden', alignSelf: 'stretch', opacity: anim.interpolate({ inputRange: [0, Math.max(h, 1)], outputRange: [0, 1] }) }}>
+      <View onLayout={(e) => setH(e.nativeEvent.layout.height)} style={[{ position: 'absolute', left: 0, right: 0 }, style]}>
+        {children}
+      </View>
+    </Animated.View>
+  );
+}

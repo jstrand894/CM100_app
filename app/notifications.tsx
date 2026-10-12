@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { DetailHeader, tint } from '../src/components/ui';
 import { agoLabel, formatPostDate } from '../src/data/news';
-import { useNotifications } from '../src/data/notifications';
+import { NEWS_PREFIX, useNotifications } from '../src/data/notifications';
 import { useOfflinePrep } from '../src/offline';
 import { useTheme } from '../src/theme';
 import { useUnits } from '../src/units';
@@ -52,6 +52,11 @@ export default function NotificationsScreen() {
             >
               <View style={styles.meta}>
                 {isUnread && <View style={[styles.dot, { backgroundColor: t.accent }]} />}
+                {n.id.startsWith(NEWS_PREFIX) && (
+                  <View style={[styles.urgent, { backgroundColor: tint(t.primary, 0.14) }]}>
+                    <Text style={[styles.urgentText, { color: t.primary }]}>Race news</Text>
+                  </View>
+                )}
                 {n.urgent && (
                   <View style={[styles.urgent, { backgroundColor: tint(t.accent, 0.16) }]}>
                     <Ionicons name="alert-circle" size={13} color={t.accent} />
