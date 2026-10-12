@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Role, useRunners } from '../runners';
+import { RolePicker } from './RunnersSection';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { markRead } from '../data/notifications';
 import { useOfflinePrep } from '../offline';
@@ -49,6 +51,9 @@ export function WelcomeModal({ prep }: { prep: Prep }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
+  const rs = useRunners();
+  const [role, setRole] = useState<Role | null>(null);
+  const [who, setWho] = useState('');
 
   useEffect(() => {
     AsyncStorage.getItem(SEEN_KEY)
@@ -60,6 +65,10 @@ export function WelcomeModal({ prep }: { prep: Prep }) {
     setOpen(false);
     AsyncStorage.setItem(SEEN_KEY, '1').catch(() => {});
     markRead(['welcome']);
+    if (role) {
+      rs.setRole(role);
+      if (who.trim()) rs.update(rs.runners[0].id, who, '');
+    }
   };
 
   return (
@@ -68,6 +77,21 @@ export function WelcomeModal({ prep }: { prep: Prep }) {
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={[styles.title, { color: t.text }]}>Welcome to the Crazy Mountain 100</Text>
           <Text style={[styles.lead, { color: t.muted }]}>Here is a quick tour, and one thing to do before you lose signal.</Text>
+          <View style={styles.who}>
+            <Text style={[styles.stepTitle, { color: t.text }]}>How will you use the app?</Text>
+            <RolePicker role={role} onPick={setRole} />
+            {role && (
+              <TextInput
+                value={who}
+                onChangeText={setWho}
+                placeholder={role === 'runner' ? 'Your name (optional)' : 'Who are you crewing? (optional)'}
+                placeholderTextColor={t.muted}
+                maxLength={24}
+                style={[styles.input, { color: t.text, borderColor: t.border, backgroundColor: t.card }]}
+              />
+            )}
+            <Text style={[styles.stepBody, { color: t.muted }]}>You can change this later in Settings, and add more runners in the Planner.</Text>
+          </View>
           {STEPS.map((s) => (
             <View key={s.title} style={styles.step}>
               <View style={[styles.icon, { backgroundColor: tint(t.primary, 0.14) }]}>
@@ -102,6 +126,8 @@ const styles = StyleSheet.create({
   content: { padding: 20, gap: 16 },
   title: { fontSize: 28, fontWeight: '900', lineHeight: 33 },
   lead: { fontSize: 16, lineHeight: 22 },
+  who: { gap: 10 },
+  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, height: 46, fontSize: 16 },
   step: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   icon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   stepTitle: { fontSize: 16, fontWeight: '800' },

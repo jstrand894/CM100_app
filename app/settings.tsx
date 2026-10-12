@@ -6,6 +6,8 @@ import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from
 import { Alert } from '../src/alert';
 import { Card, DetailHeader, ListRow, SectionTitle } from '../src/components/ui';
 import { agoLabel } from '../src/data/news';
+import { RolePicker } from '../src/components/RunnersSection';
+import { allRunnerKeys, useRunners } from '../src/runners';
 import { RACE } from '../src/data/race';
 import {
   applyTheme,
@@ -34,6 +36,7 @@ const UNIT_OPTIONS: { id: UnitSystem; label: string; sub: string }[] = [
 export default function SettingsScreen() {
   const t = useTheme();
   const units = useUnits();
+  const runners = useRunners();
   const [pref, setPref] = useState<ThemePref>('system');
   const [counts, setCounts] = useState({ logs: 0, gear: 0 });
   const [cacheAt, setCacheAt] = useState<{ news: number | null; weather: number | null }>({ news: null, weather: null });
@@ -62,14 +65,14 @@ export default function SettingsScreen() {
     AsyncStorage.setItem(THEME_KEY, p).catch(() => {});
   };
 
-  const confirm = (title: string, body: string, keys: string[], button = 'Clear') =>
+  const confirm = (title: string, body: string, keys: string[] | (() => Promise<string[]>), button = 'Clear') =>
     Alert.alert(title, body, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: button,
         style: 'destructive',
         onPress: async () => {
-          await AsyncStorage.multiRemove(keys).catch(() => {});
+          await AsyncStorage.multiRemove(typeof keys === 'function' ? await keys() : keys).catch(() => {});
           refresh();
         },
       },
@@ -117,6 +120,12 @@ export default function SettingsScreen() {
           <Text style={[styles.hint, { color: t.muted }]}>Applies to distances, elevation, temperature and wind.</Text>
         </Card>
 
+        <SectionTitle>How you use the app</SectionTitle>
+        <Card>
+          <RolePicker role={runners.role} onPick={runners.setRole} />
+          <Text style={[styles.hint, { color: t.muted }]}>Runners see a "Me" section on Home. Crew see "Your runners".</Text>
+        </Card>
+
         <SectionTitle>Pace planner</SectionTitle>
         <Card style={styles.list}>
           <ListRow
@@ -126,7 +135,7 @@ export default function SettingsScreen() {
             danger
             onPress={
               counts.logs
-                ? () => confirm('Clear all race day times?', 'This removes every time you have logged in the planner.', PLANNER_KEYS)
+                ? () => confirm('Clear all race day times?', 'This removes every time you have logged for every runner in the planner.', () => allRunnerKeys('logs'))
                 : undefined
             }
           />
@@ -136,7 +145,7 @@ export default function SettingsScreen() {
             sub="Back to 30 hours"
             danger
             last
-            onPress={() => confirm('Reset your goal time?', 'The planner goes back to a 30 hour finish.', GOAL_KEYS, 'Reset')}
+            onPress={() => confirm('Reset your goal time?', 'Every runner in the planner goes back to a 30 hour finish.', () => allRunnerKeys('goal'), 'Reset')}
           />
         </Card>
 

@@ -7,6 +7,7 @@ import { Animated, Image, Linking, Pressable, RefreshControl, StyleSheet, Text, 
 import { HeroRidge, RIDGE_FRONT } from '../../src/components/HeroRidge';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Collapsible, OfflineNotice, tint } from '../../src/components/ui';
+import { RunnersSection } from '../../src/components/RunnersSection';
 import { OfflineAction, WelcomeModal } from '../../src/components/Welcome';
 import { useOfflinePrep } from '../../src/offline';
 import { NEWS_PREFIX, useNotifications } from '../../src/data/notifications';
@@ -341,6 +342,8 @@ export default function HomeScreen() {
             </Pressable>
           )}
         </View>
+
+        <RunnersSection />
 
         {phase !== 'far' && phase !== 'done' && <WeekendCard now={now} phase={phase} />}
 

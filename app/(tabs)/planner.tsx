@@ -6,7 +6,9 @@ import { createElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef
 import { Animated, Easing, LayoutAnimation, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Alert } from '../../src/alert';
+import { RunnerBar } from '../../src/components/RunnerBar';
 import { Card, SectionTitle, tint } from '../../src/components/ui';
+import { goalKey, logsKey, useRunners } from '../../src/runners';
 import { AID_STATIONS } from '../../src/data/aidStations';
 import {
   AID_STOP_MINUTES,
@@ -23,8 +25,6 @@ import { nowMs, phaseAt, START_MS } from '../../src/data/weekend';
 import { BRAND_BLUE, useTheme } from '../../src/theme';
 import { useUnits } from '../../src/units';
 
-const GOAL_KEY = 'cm100.goalMinutes';
-const LOG_KEY = 'cm100.liveLogs';
 const MIN = 24 * 60;
 const MAX = 36 * 60;
 const PRESETS = [27, 28.5, 30, 32, 34, 36];
@@ -144,6 +144,8 @@ export default function PlannerScreen() {
   const u = useUnits();
   const [mode, setMode] = useState<Mode>(() => (phaseAt(nowMs()) === 'racing' ? 'race' : 'plan'));
   const userPicked = useRef(false);
+  const rs = useRunners();
+  const runnerId = rs.active.id;
   const [goal, setGoal] = useState(30 * 60);
   const [logs, setLogs] = useState<Logs>({});
   const [sel, setSel] = useState('ibex'); // station being logged
@@ -177,13 +179,14 @@ export default function PlannerScreen() {
     [],
   );
 
-  // Read saved values whenever the tab comes into view, so a reset in Settings shows up right away.
+  // Read saved values whenever the tab comes into view or the runner changes, so a reset in Settings shows up right away.
   useFocusEffect(
     useCallback(() => {
-      AsyncStorage.getItem(GOAL_KEY)
+      rs.reload();
+      AsyncStorage.getItem(goalKey(runnerId))
         .then((v) => setGoal(v ? Math.min(Math.max(parseInt(v, 10) || 30 * 60, MIN), MAX) : 30 * 60))
         .catch(() => {});
-      AsyncStorage.getItem(LOG_KEY)
+      AsyncStorage.getItem(logsKey(runnerId))
         .then((v) => {
           const saved: Logs = v ? JSON.parse(v) : {};
           setLogs(saved);
@@ -191,8 +194,20 @@ export default function PlannerScreen() {
           if (!userPicked.current && Object.keys(saved).length) setMode('race');
         })
         .catch(() => {});
-    }, []),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [runnerId]),
   );
+
+  // Switching runners starts from a clean screen so a time can never land on the wrong person.
+  const switchRunner = (id: string) => {
+    if (saving || id === runnerId) return;
+    setLogs({});
+    setGoal(30 * 60);
+    setHistory([]);
+    setSel('ibex');
+    setEntry(null);
+    rs.setActive(id);
+  };
 
   const [segW, setSegW] = useState(0);
   const segPos = useRef(new Animated.Value(mode === 'race' ? 1 : 0)).current;
@@ -206,14 +221,14 @@ export default function PlannerScreen() {
   const updateGoal = (min: number) => {
     const m = Math.min(Math.max(min, MIN), MAX);
     setGoal(m);
-    AsyncStorage.setItem(GOAL_KEY, String(m)).catch(() => {});
+    AsyncStorage.setItem(goalKey(runnerId), String(m)).catch(() => {});
   };
   // Every change remembers what came before, so Undo can step back through them.
   const [history, setHistory] = useState<{ logs: Logs; sel: string }[]>([]);
   const saveLogs = (next: Logs, remember = true) => {
     if (remember) setHistory((h) => [...h.slice(-29), { logs, sel }]);
     setLogs(next);
-    AsyncStorage.setItem(LOG_KEY, JSON.stringify(next)).catch(() => {});
+    AsyncStorage.setItem(logsKey(runnerId), JSON.stringify(next)).catch(() => {});
   };
 
   const order = AID_STATIONS.map((s) => s.id);
@@ -424,6 +439,7 @@ export default function PlannerScreen() {
             </Pressable>
           ))}
         </View>
+        <RunnerBar runners={rs.runners} activeId={runnerId} onPick={switchRunner} onAdd={(n, b) => { setLogs({}); setGoal(30 * 60); setHistory([]); setSel('ibex'); setEntry(null); rs.add(n, b); }} onUpdate={rs.update} onRemove={(id) => { if (id === runnerId) { setLogs({}); setGoal(30 * 60); setHistory([]); } rs.remove(id); }} />
       </View>
 
       {nextCard && !nextCard.empty && (
@@ -509,7 +525,7 @@ export default function PlannerScreen() {
                 </Pressable>
               </View>
             )}
-            <Text style={[styles.label, { color: t.muted }]}>RUNNER ARRIVED AT</Text>
+            <Text style={[styles.label, { color: t.muted }]} numberOfLines={1}>{`${rs.active.name.toUpperCase()} ARRIVED AT`}</Text>
             <View style={styles.pickRow}>
               <Pressable onPress={() => step(-1)} disabled={selIdx === 0} style={[styles.arrow, { backgroundColor: t.primarySoft, opacity: selIdx === 0 ? 0.35 : 1 }]} accessibilityLabel="Previous station">
                 <Ionicons name="chevron-back" size={24} color={t.primary} />
