@@ -441,7 +441,7 @@ export default function CourseScreen() {
         })}
       </ScrollView>
       {/* Fixed selection frame: the list scrolls underneath it, so it never slides away with a row. */}
-      <Animated.View pointerEvents="none" style={[styles.frame, { height: frameH, transform: [{ scale: SELECTED_SCALE }], borderColor: t.accent, backgroundColor: tint(t.accent, 0.04) }]} />
+      <Animated.View pointerEvents="none" style={[styles.frame, { height: frameH, transform: [{ scale: SELECTED_SCALE }], backgroundColor: tint(t.primary, 0.12) }]} />
       </View>
     </View>
   );
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   sub: { color: '#bcd6e6', fontSize: 13, fontWeight: '600', marginLeft: 8, marginTop: 2, marginBottom: 10 },
   chart: { marginHorizontal: -4 },
   content: { padding: 16, paddingTop: 12 },
-  frame: { position: 'absolute', top: 12, left: 16, right: 16, borderRadius: 18, borderWidth: 2.5 },
+  frame: { position: 'absolute', top: 12, left: 16, right: 16, borderRadius: 18 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 18, gap: 12 },
   badge: { width: 60, height: 60, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   badgeNum: { fontSize: 24, fontWeight: '700', letterSpacing: -0.8, fontVariant: ['tabular-nums'], lineHeight: 26 },

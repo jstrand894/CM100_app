@@ -309,7 +309,7 @@ export default function HomeScreen() {
           >
             <Ionicons name="timer-outline" size={20} color={t.accent} />
             <Text style={[styles.countSummary, { color: t.accent }]} numberOfLines={1}>
-              {countOpen ? 'COUNTDOWN' : c.kind === 'units' ? `${c.units.map((u) => `${u.value}${u.label[0]}`).join(' ')} · ${c.caption}` : `${c.big} · ${c.small}`}
+              COUNTDOWN
             </Text>
             <Ionicons name={countOpen ? 'chevron-up' : 'chevron-down'} size={18} color={t.muted} />
           </Pressable>
