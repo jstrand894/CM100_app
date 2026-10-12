@@ -6,6 +6,9 @@ import { Animated, Image, Linking, Pressable, RefreshControl, StyleSheet, Text, 
 import { HeroRidge, RIDGE_FRONT } from '../../src/components/HeroRidge';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OfflineNotice, tint } from '../../src/components/ui';
+import { OfflineAction, WelcomeModal } from '../../src/components/Welcome';
+import { useOfflinePrep } from '../../src/offline';
+import { useNotifications } from '../../src/data/notifications';
 import { useOnline } from '../../src/data/online';
 import { LOTTERY } from '../../src/data/lottery';
 import { agoLabel, formatPostDate, useNews } from '../../src/data/news';
@@ -202,6 +205,8 @@ export default function HomeScreen() {
   const focused = useIsFocused();
   const online = useOnline();
   const news = useNews();
+  const notices = useNotifications();
+  const prep = useOfflinePrep();
   const latest = news.posts[0];
   // Pull down to check for new news. Keep the spinner up briefly even when the check is instant.
   const [pulling, setPulling] = useState(false);
@@ -257,10 +262,17 @@ export default function HomeScreen() {
         <View style={{ height: heroHeight - 36 }} />
         <View style={[styles.sheet, { backgroundColor: t.bg }]}>
           <View style={[styles.grabber, { backgroundColor: t.border }]} />
-        {!online && (
-          <OfflineNotice style={{ marginBottom: 12 }}>
-            No signal. The countdown, schedule, course, gear and planner all work offline. News and weather show what was last saved.
-          </OfflineNotice>
+        {online && prep.ready === false && (
+          <View style={[styles.prep, { backgroundColor: t.card, borderColor: t.accent }]}>
+            <View style={styles.newsTop}>
+              <Ionicons name="cloud-download-outline" size={20} color={t.accent} />
+              <Text style={[styles.newsKicker, { color: t.text }]}>SAVE FOR OFFLINE</Text>
+            </View>
+            <Text style={[styles.newsBody, { color: t.muted, marginBottom: 10 }]}>
+              You have service now. Save news, weather and announcements before you head out of range.
+            </Text>
+            <OfflineAction prep={prep} compact />
+          </View>
         )}
         <View style={[styles.countdown, { backgroundColor: t.card, borderColor: t.border }]}>
           {c.kind === 'units' ? (
@@ -387,10 +399,19 @@ export default function HomeScreen() {
         </Text>
         </View>
       </Animated.ScrollView>
+      <WelcomeModal prep={prep} />
       <Animated.View
         pointerEvents={gearOn ? 'auto' : 'none'}
         style={[styles.gear, { top: insets.top + 8, opacity: scrollY.interpolate({ inputRange: [0, 60], outputRange: [1, 0], extrapolate: 'clamp' }) }]}
       >
+        <Pressable onPress={() => router.push('/notifications')} hitSlop={10} style={[styles.gearBtn, { marginRight: 8 }]} accessibilityRole="button" accessibilityLabel={notices.unread > 0 ? `Notifications, ${notices.unread} unread` : 'Notifications'}>
+          <Ionicons name={notices.unread > 0 ? 'notifications' : 'notifications-outline'} size={22} color={BRAND_BLUE} />
+          {notices.unread > 0 && (
+            <View style={[styles.bellBadge, { backgroundColor: t.accent }]}>
+              <Text style={styles.bellBadgeText}>{notices.unread > 9 ? '9+' : notices.unread}</Text>
+            </View>
+          )}
+        </Pressable>
         <Pressable onPress={() => router.push('/settings')} hitSlop={10} style={styles.gearBtn} accessibilityRole="button" accessibilityLabel="Settings">
           <Ionicons name="settings-outline" size={22} color={BRAND_BLUE} />
         </Pressable>
@@ -402,7 +423,10 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   heroBg: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: HERO_BG },
   heroOverscroll: { position: 'absolute', top: -800, left: 0, right: 0, height: 800, backgroundColor: HERO_BG },
-  gear: { position: 'absolute', right: 14 },
+  gear: { position: 'absolute', right: 14, flexDirection: 'row' },
+  bellBadge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fbf7f0' },
+  bellBadgeText: { color: '#ffffff', fontSize: 10, fontWeight: '900' },
+  prep: { borderRadius: 18, borderWidth: 2, padding: 14, marginBottom: 14 },
   gearBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(11,74,107,0.10)' },
   hero: { position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center' },
   sheet: {

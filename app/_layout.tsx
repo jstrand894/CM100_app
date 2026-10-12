@@ -34,6 +34,7 @@ export default function RootLayout() {
         <Stack.Screen name="info/[slug]" options={{ headerShown: false }} />
         <Stack.Screen name="gear" options={{ headerShown: false }} />
         <Stack.Screen name="news" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ headerShown: false }} />
         <Stack.Screen name="weather" options={{ headerShown: false }} />
         <Stack.Screen name="lottery" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
