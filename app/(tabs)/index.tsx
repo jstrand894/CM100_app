@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Href, router, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -208,6 +209,17 @@ export default function HomeScreen() {
   const notices = useNotifications();
   const prep = useOfflinePrep();
   const [prepOpen, setPrepOpen] = useState(false);
+  // Remember whether the countdown was left open; it starts collapsed so it does not dominate the screen.
+  const [countOpen, setCountOpen] = useState(false);
+  useEffect(() => {
+    AsyncStorage.getItem('cm100.countdownOpen')
+      .then((v) => setCountOpen(v === '1'))
+      .catch(() => {});
+  }, []);
+  const toggleCount = () => {
+    setCountOpen(!countOpen);
+    AsyncStorage.setItem('cm100.countdownOpen', countOpen ? '0' : '1').catch(() => {});
+  };
   const latest = news.posts[0];
   // Pull down to check for new news. Keep the spinner up briefly even when the check is instant.
   const [pulling, setPulling] = useState(false);
@@ -286,24 +298,41 @@ export default function HomeScreen() {
             )}
           </View>
         )}
-        <View style={[styles.countdown, { backgroundColor: t.card, borderColor: t.border }]}>
-          {c.kind === 'units' ? (
+        <View style={[styles.countdown, { backgroundColor: t.card, borderColor: t.border }, !countOpen && { paddingVertical: 10 }]}>
+          <Pressable
+            onPress={toggleCount}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: countOpen }}
+            accessibilityLabel="Countdown"
+            style={styles.countBar}
+          >
+            <Ionicons name="timer-outline" size={20} color={t.accent} />
+            <Text style={[styles.countSummary, { color: t.accent }]} numberOfLines={1}>
+              {countOpen ? 'COUNTDOWN' : c.kind === 'units' ? `${c.units.map((u) => `${u.value}${u.label[0]}`).join(' ')} · ${c.caption}` : `${c.big} · ${c.small}`}
+            </Text>
+            <Ionicons name={countOpen ? 'chevron-up' : 'chevron-down'} size={18} color={t.muted} />
+          </Pressable>
+          {countOpen && (
             <>
-              <View style={styles.units}>
-                {c.units.map((u, i) => (
-                  <View key={u.label} style={[styles.unit, i > 0 && { borderLeftWidth: 1, borderLeftColor: t.border }]}>
-                    <Text style={[styles.unitValue, { color: t.accent }]}>{u.value}</Text>
-                    <Text style={[styles.unitLabel, { color: t.muted }]}>{u.label}</Text>
+              {c.kind === 'units' ? (
+                <>
+                  <View style={[styles.units, { marginTop: 8 }]}>
+                    {c.units.map((u, i) => (
+                      <View key={u.label} style={[styles.unit, i > 0 && { borderLeftWidth: 1, borderLeftColor: t.border }]}>
+                        <Text style={[styles.unitValue, { color: t.accent }]}>{u.value}</Text>
+                        <Text style={[styles.unitLabel, { color: t.muted }]}>{u.label}</Text>
+                      </View>
+                    ))}
                   </View>
-                ))}
-              </View>
-              <Text style={[styles.countSmall, { color: t.muted }]}>{c.caption}</Text>
-              {c.footer && <Text style={[styles.countFooter, { color: t.text }]}>{c.footer}</Text>}
-            </>
-          ) : (
-            <>
-              <Text style={[styles.countBig, { color: t.accent }]}>{c.big}</Text>
-              <Text style={[styles.countSmall, { color: t.muted }]}>{c.small}</Text>
+                  <Text style={[styles.countSmall, { color: t.muted }]}>{c.caption}</Text>
+                  {c.footer && <Text style={[styles.countFooter, { color: t.text }]}>{c.footer}</Text>}
+                </>
+              ) : (
+                <>
+                  <Text style={[styles.countBig, { color: t.accent }]}>{c.big}</Text>
+                  <Text style={[styles.countSmall, { color: t.muted }]}>{c.small}</Text>
+                </>
+              )}
             </>
           )}
           {lottery && (
@@ -472,6 +501,8 @@ const styles = StyleSheet.create({
   unit: { flex: 1, alignItems: 'center' },
   unitValue: { fontSize: 30, fontWeight: '900', lineHeight: 40, fontVariant: ['tabular-nums'] },
   unitLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' },
+  countBar: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'stretch', paddingHorizontal: 16, minHeight: 28 },
+  countSummary: { flex: 1, fontSize: 15, fontWeight: '800' },
   countBig: { fontSize: 40, fontWeight: '900', lineHeight: 46 },
   lotteryPill: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 },
   lotteryText: { fontSize: 13, fontWeight: '800' },
