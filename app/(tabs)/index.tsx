@@ -434,6 +434,20 @@ export default function HomeScreen() {
             <Text style={[styles.webText, { color: t.primary }]}>Instagram</Text>
           </Pressable>
         </View>
+        <View style={[styles.land, { backgroundColor: t.card, borderColor: t.border }]} accessibilityLabel="Land acknowledgment">
+          <View style={styles.newsTop}>
+            <Ionicons name="leaf-outline" size={18} color={t.primary} />
+            <Text style={[styles.newsKicker, { color: t.muted }]}>LAND ACKNOWLEDGMENT</Text>
+          </View>
+          <Text style={[styles.landTitle, { color: t.text }]}>Respect where you are and give thanks</Text>
+          <Text style={[styles.landBody, { color: t.muted }]}>
+            The race course itself navigates through the Indigenous lands of the Apsaalooke, private, and public land/forest service.
+            To the Apsaalooke people this range is called Awaxaawippíia. "Awaxaawi" meaning mountain, "ppíia" meaning ominous or angry.
+            Some say you can hear the mountains and the power is felt. We feel this is an important history and knowledge. Our hope
+            is that you take the time to learn about its rich history.
+          </Text>
+        </View>
+
         <Text style={[styles.disclaimer, { color: t.muted }]}>
           Companion app for the Crazy Mountain 100. Details are subject to change, so always confirm with the race website.
         </Text>
@@ -561,5 +575,8 @@ const styles = StyleSheet.create({
   links: { flexDirection: 'row', justifyContent: 'center', gap: 20, marginTop: 20 },
   web: { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', padding: 12 },
   webText: { fontSize: 15, fontWeight: '700' },
+  land: { borderRadius: 18, borderWidth: 1, padding: 16, marginTop: 18, marginBottom: 14 },
+  landTitle: { fontSize: 16, fontWeight: '800', lineHeight: 22 },
+  landBody: { fontSize: 14, lineHeight: 21, marginTop: 6 },
   disclaimer: { fontSize: 12, textAlign: 'center', lineHeight: 18, marginTop: 4 },
 });
