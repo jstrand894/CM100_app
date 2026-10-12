@@ -402,7 +402,7 @@ export default function HomeScreen() {
 
         <WeatherCard />
 
-        <Text style={[styles.heading, { color: t.muted }]}>KNOW BEFORE YOU GO</Text>
+        <Text style={[styles.heading, { color: t.muted }]}>RACE BASICS</Text>
         {HIGHLIGHTS.filter((h) => h.title !== 'Weather').map((h) => (
           <View key={h.title} style={[styles.note, { backgroundColor: t.card, borderColor: t.border }]}>
             <Text style={[styles.noteTitle, { color: t.text }]}>{h.title}</Text>
