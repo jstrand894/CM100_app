@@ -21,6 +21,7 @@ import {
 } from '../../src/data/pace';
 import { nowMs, phaseAt, START_MS } from '../../src/data/weekend';
 import { BRAND_BLUE, useTheme } from '../../src/theme';
+import { useUnits } from '../../src/units';
 
 const GOAL_KEY = 'cm100.goalMinutes';
 const LOG_KEY = 'cm100.liveLogs';
@@ -102,6 +103,7 @@ function TimeField({ minutes, onChange }: { minutes: number; onChange: (minutesO
 }
 
 function HowItWorks({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const u = useUnits();
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const points = [
@@ -128,7 +130,7 @@ function HowItWorks({ visible, onClose }: { visible: boolean; onClose: () => voi
           {points.map((p) => (
             <View key={p} style={styles.point}>
               <Text style={[styles.pointDot, { color: t.primary }]}>•</Text>
-              <Text style={[styles.pointText, { color: t.text }]}>{p}</Text>
+              <Text style={[styles.pointText, { color: t.text }]}>{u.text(p)}</Text>
             </View>
           ))}
         </ScrollView>
@@ -139,6 +141,7 @@ function HowItWorks({ visible, onClose }: { visible: boolean; onClose: () => voi
 
 export default function PlannerScreen() {
   const t = useTheme();
+  const u = useUnits();
   const [mode, setMode] = useState<Mode>(() => (phaseAt(nowMs()) === 'racing' ? 'race' : 'plan'));
   const userPicked = useRef(false);
   const [goal, setGoal] = useState(30 * 60);
@@ -369,7 +372,7 @@ export default function PlannerScreen() {
           </Text>
         </View>
         <Text style={[styles.goalSub, { color: t.muted }]}>
-          Mile {st.mile} · plan was {absLabel(planFor)}
+          {u.metric ? 'Km' : 'Mile'} {u.distNum(st.mile)} · plan was {absLabel(planFor)}
         </Text>
       </>
     );
@@ -444,7 +447,7 @@ export default function PlannerScreen() {
                   </Text>
                 )}
                 <Text style={styles.resultMeta}>
-                  {`${nextCard.miles} mi from ${shortName(nextCard.from.name)} (left ${absLabel(logs[nextCard.from.id]).replace(/^\w+ /, '')}) · about ${durationLabel(nextCard.legMin / 60)}`}
+                  {`${u.dist(nextCard.miles)} from ${shortName(nextCard.from.name)} (left ${absLabel(logs[nextCard.from.id]).replace(/^\w+ /, '')}) · about ${durationLabel(nextCard.legMin / 60)}`}
                   {nextCard.margin != null
                     ? ` · ${durationLabel(nextCard.margin)} ${nextCard.margin >= 0 ? 'ahead of' : 'behind'} cutoff`
                     : ''}
@@ -634,7 +637,7 @@ export default function PlannerScreen() {
                     )}
                   </View>
                   <Text style={[styles.mile, { color: t.muted }]}>
-                    Mile {s.mile}
+                    {u.metric ? 'Km' : 'Mile'} {u.distNum(s.mile)}
                     {s.kind !== 'start' ? ` · ${durationLabel(e)} into the race` : ''}
                   </Text>
                 </View>

@@ -15,6 +15,7 @@ import course from '../../src/data/course.json';
 import { RACE } from '../../src/data/race';
 import { stationColor } from '../../src/stationStyle';
 import { useTheme } from '../../src/theme';
+import { useUnits } from '../../src/units';
 
 const coords = (course.coordinates as number[][]).map(([latitude, longitude]) => ({ latitude, longitude }));
 const STYLES: { type: MapType; label: string; swatch: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
@@ -30,11 +31,12 @@ const PEEK_H = 58; // visible height of the minimized sheet
 const NEAR_DELTA = 0.22;
 
 function StationPin({ code, mile, color, near, small }: { code: string; mile: number; color: string; near: boolean; small?: boolean }) {
+  const u = useUnits();
   return (
     <View style={styles.pinWrap}>
       <View style={[styles.pin, small && styles.pinSmall, near && styles.pinNear, { backgroundColor: color }]}>
         <Text style={styles.pinText}>{code}</Text>
-        {near && <Text style={styles.pinMile}>{`${Math.round(mile * 10) / 10} mi`}</Text>}
+        {near && <Text style={styles.pinMile}>{u.dist(Math.round(mile * 10) / 10)}</Text>}
       </View>
       <View style={[styles.pinTip, { borderTopColor: color }]} />
     </View>
@@ -43,6 +45,7 @@ function StationPin({ code, mile, color, near, small }: { code: string; mile: nu
 
 export default function MapScreen() {
   const t = useTheme();
+  const u = useUnits();
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const online = useOnline();
@@ -158,7 +161,7 @@ export default function MapScreen() {
           <Marker
             key={st.id}
             coordinate={st.courseCoordinate}
-            title={`${st.name} (mi ${st.mile})`}
+            title={`${st.name} (${u.metric ? 'km' : 'mi'} ${u.distNum(st.mile)})`}
             description={st.cutoff ? `Cutoff ${st.cutoff} · tap for details` : 'Tap for details'}
             anchor={{ x: 0.5, y: 1 }}
             tracksViewChanges={pinsTracking}
@@ -228,7 +231,7 @@ export default function MapScreen() {
         <View style={styles.cardTop}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.cardTitle, { color: t.text }]}>{mini ? 'Tracking & GPX' : 'Crazy Mountain 100'}</Text>
-            {!mini && <Text style={[styles.cardSub, { color: t.muted }]}>{`${course.totalMiles} mi · Wilsall to Lennep`}</Text>}
+            {!mini && <Text style={[styles.cardSub, { color: t.muted }]}>{`${u.dist(course.totalMiles)} · Wilsall to Lennep`}</Text>}
           </View>
           {!mini && (
           <Pressable onPress={shareGpx} style={[styles.gpx, { backgroundColor: t.primary }]}>

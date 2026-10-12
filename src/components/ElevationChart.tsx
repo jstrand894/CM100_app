@@ -4,6 +4,7 @@ import Svg, { Circle, ClipPath, Defs, G, Line, LinearGradient, Path, Rect, Stop,
 import { AidStation } from '../data/aidStations';
 import elevation from '../data/elevation.json';
 import { BRAND_BLUE, useTheme } from '../theme';
+import { useUnits } from '../units';
 
 
 // Chart x-axis uses race-official miles (100 total), scaled from GPX distance.
@@ -42,6 +43,7 @@ const shortName = (n: string) => n.replace(/^(Start|Finish): /, '').replace(/ \(
 
 export function ElevationChart({ stations, height = 230, activeStationId = null, onSelectStation, tone = 'light', viewStart = 0, viewSpan = 100, activeMile, onPanStart, onPanMove, onPanEnd, compact = false }: Props) {
   const theme = useTheme();
+  const u = useUnits();
   const dark = tone === 'dark';
   // On the blue header the chart uses its own light-on-dark palette.
   const t = dark
@@ -133,12 +135,23 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
     if (!onSelectStation) setProbe(null);
   };
 
-  const yTicks: number[] = [];
-  if (!compact && selectable) [6000, 8000, 10000].forEach((v) => v >= yMin && v <= yMax && yTicks.push(v));
-  else if (!compact) for (let v = yMin; v <= yMax; v += 1000) yTicks.push(v);
-  const tickStep = viewSpan > 70 ? (selectable ? 25 : 20) : viewSpan > 30 ? 10 : 5;
-  const xTicks: number[] = [];
-  if (!compact) for (let m = Math.ceil(viewStart / tickStep) * tickStep; m <= viewStart + viewSpan + 0.001; m += tickStep) xTicks.push(m);
+  // Ticks sit at round numbers in the display unit; `at` is the matching feet / mile position.
+  const yTicks: { at: number; label: string }[] = [];
+  if (!compact) {
+    const ftPerUnit = u.metric ? 1 / 0.3048 : 1;
+    const lo = yMin / ftPerUnit, hi = yMax / ftPerUnit;
+    const vals: number[] = [];
+    if (selectable) (u.metric ? [1800, 2400, 3000] : [6000, 8000, 10000]).forEach((v) => v >= lo && v <= hi && vals.push(v));
+    else {
+      const step = u.metric ? 300 : 1000;
+      for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) vals.push(v);
+    }
+    vals.forEach((v) => yTicks.push({ at: v * ftPerUnit, label: `${v / 1000}k` }));
+  }
+  const miPerUnit = u.metric ? 1 / 1.609344 : 1;
+  const tickStep = u.metric ? (viewSpan > 70 ? 40 : viewSpan > 30 ? 20 : 10) : viewSpan > 70 ? (selectable ? 25 : 20) : viewSpan > 30 ? 10 : 5;
+  const xTicks: { at: number; label: number }[] = [];
+  if (!compact) for (let d = Math.ceil((viewStart / miPerUnit) / tickStep) * tickStep; d * miPerUnit <= viewStart + viewSpan + 0.001; d += tickStep) xTicks.push({ at: d * miPerUnit, label: d });
   const near = probe == null ? null : stations.find((s) => Math.abs(s.mile - probe) < 1.2);
   const active = stations.find((s) => s.id === activeStationId) ?? null;
 
@@ -149,7 +162,7 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
           <Text style={[styles.readText, { color: t.muted }]}>Touch and drag the chart to read elevation</Text>
         ) : (
           <Text style={[styles.readText, { color: t.text }]}>
-            Mile {probe.toFixed(1)} · {Math.round(elevAt(probe)).toLocaleString()} ft{near ? ` · ${near.name}` : ''}
+            {u.metric ? 'Km' : 'Mile'} {u.distNum(probe).toFixed(1)} · {u.elev(elevAt(probe))}{near ? ` · ${near.name}` : ''}
           </Text>
         )}
       </View>}
@@ -165,17 +178,17 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
                 <Rect x={PAD.left} y={0} width={plotW} height={HEIGHT} />
               </ClipPath>
             </Defs>
-            {yTicks.map((v) => (
+            {yTicks.map(({ at: v, label }) => (
               <G key={v}>
                 <Line x1={PAD.left} x2={width - PAD.right} y1={y(v)} y2={y(v)} stroke={t.border} strokeWidth={1} strokeDasharray={selectable ? '2 4' : undefined} />
                 <SvgText x={PAD.left - 8} y={y(v) + 3.5} fontSize={10} fill={t.muted} textAnchor="end">
-                  {`${v / 1000}k`}
+                  {label}
                 </SvgText>
               </G>
             ))}
-            {xTicks.map((m) => (
-              <SvgText key={m} x={x(m)} y={HEIGHT - 8} fontSize={10} fill={t.muted} textAnchor="middle">
-                {m}
+            {xTicks.map(({ at, label }) => (
+              <SvgText key={label} x={x(at)} y={HEIGHT - 8} fontSize={10} fill={t.muted} textAnchor="middle">
+                {label}
               </SvgText>
             ))}
             <G clipPath="url(#plot)">
@@ -197,7 +210,7 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
               const mileAt = activeMile ?? active.mile;
               const ax = x(mileAt);
               const ay = y(elevAt(mileAt));
-              const label = `${shortName(active.name)} · mi ${active.mile}`;
+              const label = `${shortName(active.name)} · ${u.metric ? 'km' : 'mi'} ${u.distNum(active.mile)}`;
               const w = label.length * 6.6 + 18;
               const lx = Math.min(Math.max(ax - w / 2, PAD.left - 30), width - PAD.right - w);
               return (
@@ -221,7 +234,7 @@ export function ElevationChart({ stations, height = 230, activeStationId = null,
           </Svg>
         </View>
       )}
-      {!selectable && !compact && <Text style={[styles.axis, { color: t.muted }]}>Miles</Text>}
+      {!selectable && !compact && <Text style={[styles.axis, { color: t.muted }]}>{u.metric ? 'Kilometers' : 'Miles'}</Text>}
     </View>
   );
 }

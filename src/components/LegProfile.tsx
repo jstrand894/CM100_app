@@ -3,6 +3,7 @@ import { Animated, Easing, LayoutChangeEvent, StyleSheet, Text, View } from 'rea
 import Svg, { ClipPath, Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { elevationAtMile, profileBetween } from '../data/elevationUtil';
 import { useTheme } from '../theme';
+import { useUnits } from '../units';
 
 const HEIGHT = 110;
 const PAD = { left: 10, right: 10, top: 14, bottom: 10 };
@@ -25,6 +26,7 @@ interface Props {
  */
 export function LegProfile({ prev, station, next, mode, color }: Props) {
   const t = useTheme();
+  const u = useUnits();
   const [width, setWidth] = useState(0);
   const target = mode === 'to' ? 1 : 0;
   const [p, setP] = useState(target);
@@ -69,7 +71,6 @@ export function LegProfile({ prev, station, next, mode, color }: Props) {
   const area = `${line} L${x(vis[vis.length - 1].mile).toFixed(1)},${HEIGHT} L${x(vis[0].mile).toFixed(1)},${HEIGHT} Z`;
 
   const dots = [prev, station, next].filter(Boolean) as Station[];
-  const fmt = (n: number) => Math.round(n).toLocaleString();
   // Interpolate exactly like the line does, so each dot sits on it rather than on the nearest data point.
   const ftAt = elevationAtMile;
   const shortFit = (n: string) => (n.length * 8 > (width - 12) / 2 - 4 ? n.replace(/ \(.*\)$/, '') : n);
@@ -133,7 +134,7 @@ export function LegProfile({ prev, station, next, mode, color }: Props) {
                 {shortFit(s.name)}
               </Text>
               <Text onLayout={measure(`${s.mile}s`)} style={[styles.label, { color: t.muted, transform: [{ translateX: shift(subW) }] }]} numberOfLines={1}>
-                Mile {s.mile} · {fmt(ftAt(s.mile))} ft
+                {u.metric ? 'Km' : 'Mile'} {u.distNum(s.mile)} · {u.elev(ftAt(s.mile))}
               </Text>
             </View>
           );

@@ -8,9 +8,11 @@ import {
   describeCode,
   FORECAST_WINDOW_DAYS,
   SPOTS,
+  spotDetail,
   useWeather,
 } from '../src/data/weather';
 import { useTheme } from '../src/theme';
+import { useUnits } from '../src/units';
 
 const dayName = (date: string) =>
   new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -27,6 +29,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function ForecastRow({ label, detail, day }: { label: string; detail: string; day: DayForecast }) {
   const t = useTheme();
+  const u = useUnits();
   const w = describeCode(day.code);
   return (
     <View style={[styles.spotRow, { borderTopColor: t.border }]}>
@@ -40,10 +43,10 @@ function ForecastRow({ label, detail, day }: { label: string; detail: string; da
         </View>
       </View>
       <View style={styles.stats}>
-        <Stat label="High" value={`${day.high}°`} />
-        <Stat label="Low" value={`${day.low}°`} />
+        <Stat label="High" value={u.temp(day.high)} />
+        <Stat label="Low" value={u.temp(day.low)} />
         <Stat label="Rain" value={day.rainChance == null ? '—' : `${day.rainChance}%`} />
-        <Stat label="Wind" value={`${day.windMax} mph`} />
+        <Stat label="Wind" value={u.wind(day.windMax)} />
       </View>
     </View>
   );
@@ -51,6 +54,7 @@ function ForecastRow({ label, detail, day }: { label: string; detail: string; da
 
 export default function WeatherScreen() {
   const t = useTheme();
+  const u = useUnits();
   const { forecast, history, forecastOpen, daysToRace, updatedAt, loading, failed, refresh } = useWeather();
   const days = forecast?.start.map((d) => d.date) ?? [];
 
@@ -71,7 +75,7 @@ export default function WeatherScreen() {
               <Card key={date} style={{ paddingVertical: 8 }}>
                 <Text style={[styles.dayTitle, { color: t.text }]}>{dayName(date)}</Text>
                 {SPOTS.map((s) => (
-                  <ForecastRow key={s.id} label={s.label} detail={s.detail} day={forecast[s.id][i]} />
+                  <ForecastRow key={s.id} label={s.label} detail={spotDetail(s, u)} day={forecast[s.id][i]} />
                 ))}
               </Card>
             ))}
@@ -101,14 +105,14 @@ export default function WeatherScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.spotName, { color: t.text }]}>{s.label}</Text>
-                        <Text style={[styles.spotDetail, { color: t.muted }]}>{s.detail}</Text>
+                        <Text style={[styles.spotDetail, { color: t.muted }]}>{spotDetail(s, u)}</Text>
                       </View>
                     </View>
                     <View style={styles.stats}>
-                      <Stat label="Avg high" value={`${h.high}°`} />
-                      <Stat label="Avg low" value={`${h.low}°`} />
+                      <Stat label="Avg high" value={u.temp(h.high)} />
+                      <Stat label="Avg low" value={u.temp(h.low)} />
                       <Stat label="Wet days" value={`${h.wetDays} of ${h.totalDays}`} />
-                      <Stat label="Wind" value={`${h.windMax} mph`} />
+                      <Stat label="Wind" value={u.wind(h.windMax)} />
                     </View>
                   </View>
                 );
@@ -127,7 +131,7 @@ export default function WeatherScreen() {
         <SectionTitle>Be ready for anything</SectionTitle>
         <Card>
           <Text style={[styles.body, { color: t.text }]}>
-            It can be 90°F and turn to sideways hail and then snow within an hour. Averages hide that, and the high country is far colder than the start.
+            It can be {u.temp(90)}{u.metric ? 'C' : 'F'} and turn to sideways hail and then snow within an hour. Averages hide that, and the high country is far colder than the start.
             Pack for the high point, not for Wilsall.
           </Text>
         </Card>

@@ -1,3 +1,4 @@
+import type { Units } from '../units';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -8,15 +9,21 @@ import { nowMs, START_MS } from './weekend';
 export interface WeatherSpot {
   id: 'start' | 'high';
   label: string;
-  detail: string;
+  place: string;
+  mile?: number;
+  /** Rounded elevation shown to people, in feet. */
+  shownFt: number;
   lat: number;
   lon: number;
   ft: number;
 }
 
+export const spotDetail = (s: WeatherSpot, u: Units) =>
+  s.mile != null ? `${u.metric ? 'Km' : 'Mile'} ${u.distNum(s.mile)} · ${u.elev(s.shownFt)}` : `${s.place} · ${u.elev(s.shownFt)}`;
+
 export const SPOTS: WeatherSpot[] = [
-  { id: 'start', label: 'Start', detail: 'Westling Ranch · 5,800 ft', lat: 46.12057, lon: -110.52195, ft: 5816 },
-  { id: 'high', label: 'High country', detail: 'Mile 50 · 10,000 ft', lat: 46.0502, lon: -110.33309, ft: 10003 },
+  { id: 'start', label: 'Start', place: 'Westling Ranch', shownFt: 5800, lat: 46.12057, lon: -110.52195, ft: 5816 },
+  { id: 'high', label: 'High country', place: 'High country', mile: 50, shownFt: 10000, lat: 46.0502, lon: -110.33309, ft: 10003 },
 ];
 
 // Race day and the day after, as calendar dates in Mountain Time. The race starts at 6 AM, so the UTC date matches.

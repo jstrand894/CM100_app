@@ -12,6 +12,7 @@ import course from '../../src/data/course.json';
 import { RACE } from '../../src/data/race';
 import { stationColor } from '../../src/stationStyle';
 import { BRAND_BLUE, useTheme } from '../../src/theme';
+import { useUnits } from '../../src/units';
 
 // The interactive map uses a native map view that the web does not have, so on the web the Map tab draws the route
 // itself and links out to a full map app for directions.
@@ -30,6 +31,7 @@ const mapsUrl = (lat: number, lon: number) => `https://www.google.com/maps/searc
 
 export default function MapScreen() {
   const t = useTheme();
+  const u = useUnits();
   const insets = useSafeAreaInsets();
   const line = useMemo(
     () =>
@@ -90,7 +92,7 @@ export default function MapScreen() {
               <Pressable onPress={() => router.push(`/aid/${s.id}`)} style={{ flex: 1 }} accessibilityRole="button">
                 <Text style={[styles.name, { color: t.text }]}>{s.name}</Text>
                 <Text style={[styles.mile, { color: t.muted }]}>
-                  {`Mile ${s.mile}${s.driveCoordinate ? ' · parking location' : ' · on the course'}`}
+                  {`${u.metric ? 'Km' : 'Mile'} ${u.distNum(s.mile)}${s.driveCoordinate ? ' · parking location' : ' · on the course'}`}
                 </Text>
               </Pressable>
               <Pressable onPress={() => Linking.openURL(mapsUrl(c.latitude, c.longitude))} hitSlop={8} style={[styles.go, { backgroundColor: t.primarySoft }]} accessibilityLabel={`Open ${s.name} in Maps`}>

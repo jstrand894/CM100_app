@@ -7,11 +7,10 @@ import { ElevationChart } from '../../src/components/ElevationChart';
 import { tint } from '../../src/components/ui';
 import { AID_STATIONS, AidStation, CREW_LABEL, CrewAccess } from '../../src/data/aidStations';
 import { COURSE_STATS, elevationAtMile } from '../../src/data/elevationUtil';
-import { stationColor } from '../../src/stationStyle';
 import { BRAND_BLUE, Theme, useTheme } from '../../src/theme';
+import { useUnits } from '../../src/units';
 
 const crewColor = (a: CrewAccess, t: Theme) => ({ yes: t.green, 'hike-in': t.amber, no: t.red })[a];
-const badgeColor = stationColor;
 
 function Chip({ label, color, icon }: { label: string; color: string; icon?: keyof typeof Ionicons.glyphMap }) {
   return (
@@ -22,11 +21,11 @@ function Chip({ label, color, icon }: { label: string; color: string; icon?: key
   );
 }
 
-const fmt = (n: number) => n.toLocaleString();
 
 // Connector between two stations: distance, climb and descent for the section leading to `next`.
 function Leg({ from, next }: { from: AidStation; next: AidStation }) {
   const t = useTheme();
+  const u = useUnits();
   const miles = Math.round((next.mile - from.mile) * 10) / 10;
   return (
     <View style={styles.leg}>
@@ -34,9 +33,9 @@ function Leg({ from, next }: { from: AidStation; next: AidStation }) {
       <View style={styles.legBody}>
         <Text style={[styles.legTo, { color: t.muted }]}>To {next.name.replace(/^Finish: /, '')}</Text>
         <View style={styles.legChips}>
-          <Chip label={`${miles} mi`} color={t.muted} icon="walk" />
-          {next.gainFt != null && <Chip label={`+${fmt(next.gainFt)} ft`} color={t.muted} icon="trending-up" />}
-          {next.lossFt != null && <Chip label={`−${fmt(next.lossFt)} ft`} color={t.muted} icon="trending-down" />}
+          <Chip label={u.dist(miles)} color={t.muted} icon="walk" />
+          {next.gainFt != null && <Chip label={`+${u.elev(next.gainFt)}`} color={t.muted} icon="trending-up" />}
+          {next.lossFt != null && <Chip label={`−${u.elev(next.lossFt)}`} color={t.muted} icon="trending-down" />}
         </View>
       </View>
     </View>
@@ -59,6 +58,7 @@ const TOUGHEST = AID_STATIONS.map((st, i) => {
   .slice(0, 3);
 
 function CourseDetails({ activeId, onPick }: { activeId: string; onPick: (id: string) => void }) {
+  const u = useUnits();
   const idx = Math.max(AID_STATIONS.findIndex((s) => s.id === activeId), 0);
   const st = AID_STATIONS[idx];
   const prev = idx > 0 ? AID_STATIONS[idx - 1] : null;
@@ -67,10 +67,10 @@ function CourseDetails({ activeId, onPick }: { activeId: string; onPick: (id: st
   return (
     <View>
       <View style={styles.statRow}>
-        <Stat label="Distance" value="100 mi" />
-        <Stat label="Climb" value={`${fmt(raceGain)} ft`} />
-        <Stat label="Descent" value={`${fmt(raceLoss)} ft`} />
-        <Stat label="High / low" value={`${(COURSE_STATS.highFt / 1000).toFixed(1)}k / ${(COURSE_STATS.lowFt / 1000).toFixed(1)}k`} />
+        <Stat label="Distance" value={u.dist(100)} />
+        <Stat label="Climb" value={u.elev(raceGain)} />
+        <Stat label="Descent" value={u.elev(raceLoss)} />
+        <Stat label="High / low" value={`${(u.elevNum(COURSE_STATS.highFt) / 1000).toFixed(1)}k / ${(u.elevNum(COURSE_STATS.lowFt) / 1000).toFixed(1)}k`} />
       </View>
 
       <View style={[styles.block, { backgroundColor: RAISED }]}>
@@ -80,11 +80,11 @@ function CourseDetails({ activeId, onPick }: { activeId: string; onPick: (id: st
         </Text>
         <Text style={styles.blockBody}>
           {prev
-            ? `${miles} mi · +${fmt(st.gainFt ?? 0)} / −${fmt(st.lossFt ?? 0)} ft · net ${net >= 0 ? '+' : '−'}${fmt(Math.abs(net))} ft · ${Math.round((st.gainFt ?? 0) / Math.max(miles, 0.1))} ft of climbing per mile`
-            : `Mile 0 · ${Math.round(elevationAtMile(0)).toLocaleString()} ft elevation`}
+            ? `${u.dist(miles)} · +${u.elevPlain(st.gainFt ?? 0)} / −${u.elev(st.lossFt ?? 0)} · net ${net >= 0 ? '+' : '−'}${u.elev(Math.abs(net))} · ${u.grade(st.gainFt ?? 0, Math.max(miles, 0.1))} of climbing`
+            : `${u.distUnit === 'km' ? 'Km' : 'Mile'} 0 · ${u.elev(elevationAtMile(0))} elevation`}
         </Text>
         <Text style={styles.blockBody}>
-          {prev ? `Elevation at ${st.name.replace(/^Finish: /, '')}: ${Math.round(elevationAtMile(st.mile)).toLocaleString()} ft` : ' '}
+          {prev ? `Elevation at ${st.name.replace(/^Finish: /, '')}: ${u.elev(elevationAtMile(st.mile))}` : ' '}
         </Text>
       </View>
 
@@ -95,7 +95,7 @@ function CourseDetails({ activeId, onPick }: { activeId: string; onPick: (id: st
             To {r.st.name.replace(/^Finish: /, '')}
           </Text>
           <Text style={styles.toughMeta}>
-            +{fmt(r.st.gainFt!)} ft in {Math.round(r.miles * 10) / 10} mi · {Math.round(r.perMile)} ft/mi
+            +{u.elev(r.st.gainFt!)} in {u.dist(Math.round(r.miles * 10) / 10)} · {u.grade(r.st.gainFt!, r.miles)}
           </Text>
         </Pressable>
       ))}
@@ -166,6 +166,7 @@ const ZoomChart = memo(function ZoomChart({
 
 export default function CourseScreen() {
   const t = useTheme();
+  const u = useUnits();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const rows = useRef<Record<string, { y: number; h: number }>>({});
@@ -176,6 +177,10 @@ export default function CourseScreen() {
   // Pull the header down (or tap the handle) to reveal course details; drag sideways on the chart to scrub.
   const progress = useRef(new Animated.Value(0)).current;
   const isOpen = useRef(false);
+  // Collapsing hides the chart (and details) so the station list gets the space.
+  const [collapsed, setCollapsed] = useState(false);
+  const collapsedRef = useRef(false);
+  const chartShown = useRef(new Animated.Value(1)).current;
   const settle = useCallback(
     (open: boolean) => {
       isOpen.current = open;
@@ -183,10 +188,17 @@ export default function CourseScreen() {
     },
     [progress],
   );
+  const toggleCollapsed = useCallback(() => {
+    const next = !collapsedRef.current;
+    collapsedRef.current = next;
+    setCollapsed(next);
+    if (next && isOpen.current) settle(false);
+    Animated.timing(chartShown, { toValue: next ? 0 : 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  }, [chartShown, settle]);
   const pan = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponderCapture: (_e, g) => Math.abs(g.dy) > 10 && Math.abs(g.dy) > Math.abs(g.dx) * 1.5,
+        onMoveShouldSetPanResponderCapture: (_e, g) => !collapsedRef.current && Math.abs(g.dy) > 10 && Math.abs(g.dy) > Math.abs(g.dx) * 1.5,
         onPanResponderMove: (_e, g) => progress.setValue(Math.min(Math.max((isOpen.current ? 1 : 0) + g.dy / PANEL_H, 0), 1)),
         onPanResponderRelease: (_e, g) => settle(isOpen.current ? !(g.dy < -40) : g.dy > 40),
         onPanResponderTerminate: () => settle(isOpen.current),
@@ -324,19 +336,30 @@ export default function CourseScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]} {...pan.panHandlers}>
-        <Text style={styles.title}>Course</Text>
-        <Text style={styles.sub}>Pull down to see the whole course</Text>
-        <View style={styles.chart}>
-          <ZoomChart activeId={activeId} onSelect={jumpTo} center={center} progress={progress} onPanStart={onPanStart} onPanMove={onPanMove} onPanEnd={onPanEnd} />
+        <View style={styles.titleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Course</Text>
+            {!collapsed && <Text style={styles.sub}>Pull down to see the whole course</Text>}
+          </View>
+          <Pressable onPress={toggleCollapsed} hitSlop={10} style={styles.collapseBtn} accessibilityRole="button" accessibilityLabel={collapsed ? 'Show elevation profile' : 'Hide elevation profile'}>
+            <Ionicons name={collapsed ? 'chevron-down' : 'chevron-up'} size={18} color="#ffffff" />
+          </Pressable>
         </View>
+        <Animated.View style={{ height: chartShown.interpolate({ inputRange: [0, 1], outputRange: [0, 195] }), opacity: chartShown, overflow: 'hidden' }}>
+          <View style={styles.chart}>
+            <ZoomChart activeId={activeId} onSelect={jumpTo} center={center} progress={progress} onPanStart={onPanStart} onPanMove={onPanMove} onPanEnd={onPanEnd} />
+          </View>
+        </Animated.View>
         <Animated.View style={{ height: panelHeight, overflow: 'hidden', opacity: progress }}>
           <View style={{ paddingHorizontal: 8, paddingTop: 4 }}>
             <CourseDetails activeId={activeId} onPick={jumpTo} />
           </View>
         </Animated.View>
-        <Pressable onPress={() => settle(!isOpen.current)} hitSlop={12} style={styles.handleWrap} accessibilityLabel="Toggle course details">
-          <View style={styles.handle} />
-        </Pressable>
+        {!collapsed && (
+          <Pressable onPress={() => settle(!isOpen.current)} hitSlop={12} style={styles.handleWrap} accessibilityLabel="Toggle course details">
+            <View style={styles.handle} />
+          </Pressable>
+        )}
       </View>
 
       <View style={{ flex: 1 }}>
@@ -355,7 +378,7 @@ export default function CourseScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: bottomPad }]}
       >
         {AID_STATIONS.map((item, idx) => {
-          const kc = badgeColor(item, t);
+          const kc = t.primary;
           return (
             <View key={item.id} onLayout={onRowLayout(item.id)}>
               <Grow active={item.id === activeId}>
@@ -370,24 +393,27 @@ export default function CourseScreen() {
                     { backgroundColor: t.card, borderColor: t.border, borderWidth: 1 },
                   ])}
                 >
-                  <View style={[styles.badge, { backgroundColor: tint(kc, 0.16) }]}>
+                  <View style={styles.badge}>
                     <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.badgeNum, { color: kc }]}>
-                      {item.mile}
+                      {u.distNum(item.mile)}
                     </Text>
-                    <Text style={[styles.badgeLabel, { color: kc }]}>MI</Text>
+                    <Text style={[styles.badgeLabel, { color: kc }]}>{u.distUnit.toUpperCase()}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.name, { color: t.text }]}>{item.name}</Text>
                     <View style={styles.chips}>
-                      {item.kind === 'start' && <Chip label="Start 6:00 AM" color={t.primary} icon="time-outline" />}
+                      {item.kind === 'start' && <Chip label="Start 6:00 AM" color={t.muted} icon="time-outline" />}
                       {item.cutoff && <Chip label={`Cutoff ${item.cutoff}`} color={t.muted} icon="time-outline" />}
                       {item.kind === 'cutoff' ? (
-                        <Chip label="Cutoff only" color={t.amber} />
+                        <>
+                          <Chip label="No aid station" color={t.muted} />
+                          <Chip label="Cutoff only" color={t.muted} />
+                        </>
                       ) : (
                         <Chip label={CREW_LABEL[item.crewAccess]} color={crewColor(item.crewAccess, t)} />
                       )}
-                      {item.pacerAccess && <Chip label="Pacers" color={t.primary} />}
-                      {item.dropBags && <Chip label="Drop bags" color={t.accent} />}
+                      {item.pacerAccess && <Chip label="Pacers" color={t.muted} />}
+                      {item.dropBags && <Chip label="Drop bags" color={t.muted} />}
                     </View>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={t.muted} />
@@ -424,14 +450,16 @@ export default function CourseScreen() {
 const styles = StyleSheet.create({
   header: { backgroundColor: BRAND_BLUE, paddingHorizontal: 12, paddingBottom: 10, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   title: { color: '#ffffff', fontSize: 26, fontWeight: '800', marginLeft: 8 },
+  titleRow: { flexDirection: 'row', alignItems: 'center' },
+  collapseBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', marginRight: 4 },
   sub: { color: '#bcd6e6', fontSize: 13, fontWeight: '600', marginLeft: 8, marginTop: 2, marginBottom: 10 },
   chart: { marginHorizontal: -4 },
   content: { padding: 16, paddingTop: 12 },
   frame: { position: 'absolute', top: 12, left: 16, right: 16, borderRadius: 18, borderWidth: 2.5 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 18, gap: 12 },
-  badge: { width: 58, height: 58, borderRadius: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  badgeNum: { fontSize: 19, fontWeight: '900' },
-  badgeLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.6 },
+  badge: { width: 60, height: 60, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  badgeNum: { fontSize: 24, fontWeight: '700', letterSpacing: -0.8, fontVariant: ['tabular-nums'], lineHeight: 26 },
+  badgeLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 1.6, opacity: 0.7, marginTop: 1 },
   name: { fontSize: 17, fontWeight: '800' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },

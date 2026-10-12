@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Image, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { HeroRidge, RIDGE_FRONT } from '../../src/components/HeroRidge';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { OfflineNotice } from '../../src/components/ui';
+import { OfflineNotice, tint } from '../../src/components/ui';
 import { useOnline } from '../../src/data/online';
 import { LOTTERY } from '../../src/data/lottery';
 import { agoLabel, formatPostDate, useNews } from '../../src/data/news';
@@ -13,6 +13,7 @@ import { HIGHLIGHTS, RACE } from '../../src/data/race';
 import { describeCode, SPOTS, useWeather } from '../../src/data/weather';
 import { clockDuration, CUTOFF_MS, nowMs, Phase, phaseAt, shortDuration, START_MS, upcoming } from '../../src/data/weekend';
 import { BRAND_BLUE, useTheme } from '../../src/theme';
+import { useUnits } from '../../src/units';
 
 const logo = require('../../assets/brand/cm100-logo-transparent.png');
 const HERO_BG = '#fbf7f0'; // warm cream, picks up the logo's illustrated feel
@@ -65,13 +66,13 @@ function lotteryLine(now: number): string | null {
   return null;
 }
 
-const TILES: { label: string; sub: string; href: Href; urgent?: boolean }[] = [
-  { label: 'Live tracking', sub: 'Follow your runner', href: '/map?tracking=1' },
-  { label: 'Race weekend', sub: 'Schedule and shuttle', href: '/info/schedule' },
-  { label: 'Gear and drop bags', sub: 'Checklists', href: '/gear' },
-  { label: 'Crew and pacers', sub: 'Rules for support teams', href: '/info/crew' },
-  { label: 'Emergency', sub: 'Hospitals and 911', href: '/info/emergency', urgent: true },
-  { label: 'Food and lodging', sub: 'Wilsall, Big Timber, Clyde Park', href: '/info/local' },
+const TILES: { label: string; sub: string; href: Href; icon: keyof typeof Ionicons.glyphMap; urgent?: boolean }[] = [
+  { label: 'Live tracking', icon: 'radio', sub: 'Follow your runner', href: '/map?tracking=1' },
+  { label: 'Race weekend', icon: 'calendar', sub: 'Schedule and shuttle', href: '/info/schedule' },
+  { label: 'Gear and drop bags', icon: 'bag-handle', sub: 'Checklists', href: '/gear' },
+  { label: 'Crew and pacers', icon: 'people', sub: 'Rules for support teams', href: '/info/crew' },
+  { label: 'Emergency', icon: 'medkit', sub: 'Hospitals and 911', href: '/info/emergency', urgent: true },
+  { label: 'Food and lodging', icon: 'restaurant', sub: 'Wilsall, Big Timber, Clyde Park', href: '/info/local' },
 ];
 
 // Race-weekend card: what is next, plus shortcuts that matter at that point in the weekend.
@@ -140,6 +141,7 @@ function WeekendCard({ now, phase }: { now: number; phase: Phase }) {
 
 // Forecast once it exists (about two weeks out), otherwise what the last five years looked like on race weekend.
 function WeatherCard() {
+  const u = useUnits();
   const { forecast, history, forecastOpen, updatedAt, failed } = useWeather();
   const useForecast = forecastOpen && !!forecast;
   const rows = SPOTS.map((s) => {
@@ -168,8 +170,8 @@ function WeatherCard() {
             <View key={r!.id} style={[styles.wxCol, i > 0 && { borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.2)' }]}>
               <Text style={styles.wxLabel}>{r!.label}</Text>
               <Text style={styles.wxTemp}>
-                {`${r!.hi}°`}
-                <Text style={styles.wxLow}>{` / ${r!.lo}°`}</Text>
+                {u.temp(r!.hi)}
+                <Text style={styles.wxLow}>{` / ${u.temp(r!.lo)}`}</Text>
               </Text>
               <Text style={styles.wxNote}>{r!.note}</Text>
             </View>
@@ -177,7 +179,7 @@ function WeatherCard() {
         </View>
       ) : (
         <Text style={styles.wxFallback}>
-          {failed ? 'No signal and nothing saved yet. ' : ''}It can be 90°F and turn to hail and snow within an hour. Tap for typical conditions and the race day forecast.
+          {failed ? 'No signal and nothing saved yet. ' : ''}It can be {u.temp(90)}{u.metric ? 'C' : 'F'} and turn to hail and snow within an hour. Tap for typical conditions and the race day forecast.
         </Text>
       )}
     </Pressable>
@@ -186,6 +188,7 @@ function WeatherCard() {
 
 export default function HomeScreen() {
   const t = useTheme();
+  const u = useUnits();
   const insets = useSafeAreaInsets();
   // Tick every second so the countdown stays live.
   const [now, setNow] = useState(() => nowMs());
@@ -309,11 +312,11 @@ export default function HomeScreen() {
             {latest ? (
               <>
                 <Text style={[styles.newsTitle, { color: t.text }]} numberOfLines={2}>
-                  {latest.title}
+                  {u.text(latest.title)}
                 </Text>
                 {latest.body !== '' && (
                   <Text style={[styles.newsBody, { color: t.muted }]} numberOfLines={2}>
-                    {latest.body}
+                    {u.text(latest.body)}
                   </Text>
                 )}
                 <Text style={[styles.newsFoot, { color: t.muted }]}>{`${formatPostDate(latest.date)} · updated ${agoLabel(news.updatedAt)} · all news`}</Text>
@@ -325,18 +328,24 @@ export default function HomeScreen() {
         )}
 
         <View style={styles.grid}>
-          {TILES.map((tile) => (
-            <Pressable
-              key={tile.label}
-              onPress={() => router.push(tile.href)}
-              accessibilityRole="button"
-              accessibilityLabel={`${tile.label}. ${tile.sub}`}
-              style={({ pressed }) => [styles.tile, { backgroundColor: tile.urgent ? '#b91c1c' : BRAND_BLUE }, pressed && { opacity: 0.85 }]}
-            >
-              <Text style={styles.tileLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{tile.label}</Text>
-              <Text style={styles.tileSub} numberOfLines={1}>{tile.sub}</Text>
-            </Pressable>
-          ))}
+          {TILES.map((tile) => {
+            const fg = tile.urgent ? t.red : t.primary;
+            return (
+              <Pressable
+                key={tile.label}
+                onPress={() => router.push(tile.href)}
+                accessibilityRole="button"
+                accessibilityLabel={`${tile.label}. ${tile.sub}`}
+                style={({ pressed }) => [styles.tile, { backgroundColor: t.card, borderColor: t.border }, pressed && { opacity: 0.7, transform: [{ scale: 0.98 }] }]}
+              >
+                <View style={[styles.tileIcon, { backgroundColor: tile.urgent ? tint(t.red) : t.primarySoft }]}>
+                  <Ionicons name={tile.icon} size={20} color={fg} />
+                </View>
+                <Text style={[styles.tileLabel, { color: t.text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{tile.label}</Text>
+                <Text style={[styles.tileSub, { color: t.muted }]} numberOfLines={1}>{tile.sub}</Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         <WeatherCard />
@@ -345,7 +354,7 @@ export default function HomeScreen() {
         {HIGHLIGHTS.filter((h) => h.title !== 'Weather').map((h) => (
           <View key={h.title} style={[styles.note, { backgroundColor: t.card, borderColor: t.border }]}>
             <Text style={[styles.noteTitle, { color: t.text }]}>{h.title}</Text>
-            <Text style={[styles.noteBody, { color: t.muted }]}>{h.body}</Text>
+            <Text style={[styles.noteBody, { color: t.muted }]}>{u.text(h.body)}</Text>
           </View>
         ))}
 
@@ -441,9 +450,10 @@ const styles = StyleSheet.create({
   newsBody: { fontSize: 14, lineHeight: 20, marginTop: 4 },
   newsFoot: { fontSize: 12, fontWeight: '600', marginTop: 8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  tile: { width: '48%', flexGrow: 1, minHeight: 76, justifyContent: 'flex-end', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, overflow: 'hidden' },
-  tileLabel: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
-  tileSub: { color: 'rgba(255,255,255,0.78)', fontSize: 12, marginTop: 1 },
+  tile: { width: '48%', flexGrow: 1, borderRadius: 18, borderWidth: 1, padding: 14 },
+  tileIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  tileLabel: { fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
+  tileSub: { fontSize: 12, marginTop: 2 },
   weekend: { borderRadius: 18, borderWidth: 1, padding: 14, marginTop: 14 },
   nextTitle: { fontSize: 20, fontWeight: '800', lineHeight: 26 },
   nextMeta: { fontSize: 14, fontWeight: '600', marginTop: 2 },

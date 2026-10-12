@@ -4,9 +4,11 @@ import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View 
 import { DetailHeader, tint } from '../src/components/ui';
 import { agoLabel, formatPostDate, useNews } from '../src/data/news';
 import { useTheme } from '../src/theme';
+import { useUnits } from '../src/units';
 
 export default function NewsScreen() {
   const t = useTheme();
+  const u = useUnits();
   const { posts, updatedAt, refreshing, failed, refresh, markSeen, isSample, ready } = useNews();
 
   useEffect(() => {
@@ -45,8 +47,8 @@ export default function NewsScreen() {
               )}
               <Text style={[styles.date, { color: t.muted }]}>{formatPostDate(p.date)}</Text>
             </View>
-            <Text style={[styles.title, { color: t.text }]}>{p.title}</Text>
-            {p.body !== '' && <Text style={[styles.body, { color: t.text }]}>{p.body}</Text>}
+            <Text style={[styles.title, { color: t.text }]}>{u.text(p.title)}</Text>
+            {p.body !== '' && <Text style={[styles.body, { color: t.text }]}>{u.text(p.body)}</Text>}
             {p.link !== '' && (
               <Pressable onPress={() => Linking.openURL(p.link)} style={styles.link}>
                 <Text style={[styles.linkText, { color: t.primary }]}>Read more</Text>

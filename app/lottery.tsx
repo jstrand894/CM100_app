@@ -4,6 +4,7 @@ import { LayoutAnimation, Linking, Platform, Pressable, ScrollView, StyleSheet, 
 import { Button, Card, DetailHeader, Section } from '../src/components/ui';
 import { EXTRA_TICKETS, LOTTERY, QUALIFIER, STEPS, TIMELINE } from '../src/data/lottery';
 import { BRAND_BLUE, useTheme } from '../src/theme';
+import { useUnits } from '../src/units';
 
 // Android needs layout animations switched on (a no-op on the new architecture).
 if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.(true);
@@ -26,6 +27,7 @@ function status(now: number) {
 
 export default function LotteryScreen() {
   const t = useTheme();
+  const u = useUnits();
   const now = Date.now();
   const s = useMemo(() => status(now), [now]);
   const [open, setOpen] = useState<string | null>('steps'); // one card open at a time keeps the page short
@@ -86,7 +88,7 @@ export default function LotteryScreen() {
                 </View>
                 <View style={styles.tlBody}>
                   <Text style={[styles.tlWhen, { color: isNext ? t.accent : t.muted }]}>{item.when.toUpperCase()}</Text>
-                  <Text style={[styles.tlWhat, { color: past ? t.muted : t.text }]}>{item.what}</Text>
+                  <Text style={[styles.tlWhat, { color: past ? t.muted : t.text }]}>{u.text(item.what)}</Text>
                 </View>
               </View>
             );
@@ -102,7 +104,7 @@ export default function LotteryScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.stepTitle, { color: t.text }]}>{step.title}</Text>
-                  <Text style={[styles.body, { color: t.muted }]}>{step.body}</Text>
+                  <Text style={[styles.body, { color: t.muted }]}>{u.text(step.body)}</Text>
                 </View>
               </View>
             ))}
@@ -114,7 +116,7 @@ export default function LotteryScreen() {
             {QUALIFIER.map((q) => (
               <View key={q.title}>
                 <Text style={[styles.stepTitle, { color: t.text }]}>{q.title}</Text>
-                <Text style={[styles.body, { color: t.muted }]}>{q.body}</Text>
+                <Text style={[styles.body, { color: t.muted }]}>{u.text(q.body)}</Text>
               </View>
             ))}
             <Pressable onPress={() => Linking.openURL(`mailto:${LOTTERY.forms}`)}>
@@ -129,7 +131,7 @@ export default function LotteryScreen() {
             {EXTRA_TICKETS.map((line) => (
               <Text key={line} style={[styles.body, { color: t.text }]}>
                 {'•  '}
-                {line}
+                {u.text(line)}
               </Text>
             ))}
           </View>

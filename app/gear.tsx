@@ -8,6 +8,7 @@ import { DetailHeader, Section, tint } from '../src/components/ui';
 import { AID_STATIONS } from '../src/data/aidStations';
 import { MANDATORY_GEAR, RECOMMENDED_GEAR } from '../src/data/race';
 import { useTheme } from '../src/theme';
+import { useUnits } from '../src/units';
 
 // Android needs layout animations switched on (a no-op on the new architecture).
 if (Platform.OS === 'android') UIManager.setLayoutAnimationEnabledExperimental?.(true);
@@ -26,6 +27,7 @@ interface Saved {
 
 export default function GearScreen() {
   const t = useTheme();
+  const u = useUnits();
   const [saved, setSaved] = useState<Saved>({ checked: {}, custom: {} });
   const [openSection, setOpenSection] = useState<string | null>(null); // one section open at a time keeps the page short
   const [openBag, setOpenBag] = useState<string | null>(null);
@@ -208,7 +210,7 @@ export default function GearScreen() {
                   style={({ pressed }) => [styles.bagHead, pressed && { opacity: 0.7 }]}
                 >
                   <View style={[styles.bagMile, { backgroundColor: tint(t.primary, 0.14) }]}>
-                    <Text style={[styles.bagMileText, { color: t.primary }]}>{st.mile}</Text>
+                    <Text style={[styles.bagMileText, { color: t.primary }]}>{u.distNum(st.mile)}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.bagName, { color: t.text }]}>{stationName(st.name)}</Text>

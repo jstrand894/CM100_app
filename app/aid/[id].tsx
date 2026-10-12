@@ -11,6 +11,7 @@ import { TRAIL } from '../../src/data/trail';
 import { CREW_DRIVE, CUTOFF_HOURS, clockLabel } from '../../src/data/pace';
 import { stationColor } from '../../src/stationStyle';
 import { useTheme } from '../../src/theme';
+import { useUnits } from '../../src/units';
 
 // Bottom prev/next buttons are tight on space; the visit suffix is never needed there because the two Cow Camps are never neighbours.
 const navName = (n: string) => shortName(n).replace(/ \(.*\)$/, '');
@@ -65,6 +66,7 @@ function Pill({ label, color, icon }: { label: string; color: string; icon?: key
 
 export default function AidStationDetail() {
   const t = useTheme();
+  const u = useUnits();
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
   // The stack's full-screen swipe-back would otherwise steal a rightward swipe on the graph, so it is switched off while a finger is on it.
@@ -177,7 +179,7 @@ export default function AidStationDetail() {
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <Animated.View style={{ opacity: fade }}>
-      <DetailHeader title={station.name} subtitle={`Mile ${station.mile}${cutoffHours != null ? ` · Cutoff ${clockLabel(cutoffHours)}` : ''}`}>
+      <DetailHeader title={station.name} subtitle={`${u.metric ? 'Km' : 'Mile'} ${u.distNum(station.mile)}${cutoffHours != null ? ` · Cutoff ${clockLabel(cutoffHours)}` : ''}`}>
         <View style={styles.pills}>
           {station.kind === 'start' && <Pill label="Start 6:00 AM" color="#ffffff" icon="time-outline" />}
           {isCutoffOnly ? (
@@ -197,7 +199,7 @@ export default function AidStationDetail() {
 
       <Animated.View style={{ flex: 1, transform: [{ translateX: slide }] }}>
       <ScrollView ref={scroller} contentContainerStyle={styles.content}>
-        <Text style={[styles.summary, { color: t.text }]}>{station.summary}</Text>
+        <Text style={[styles.summary, { color: t.text }]}>{u.text(station.summary)}</Text>
 
         {station.driveCoordinate ? (
           <Pressable onPress={openMaps} style={({ pressed }) => [styles.cta, { backgroundColor: t.primary }, pressed && { opacity: 0.85 }]}>
@@ -221,7 +223,7 @@ export default function AidStationDetail() {
         <SectionTitle>At a glance</SectionTitle>
         <Card style={{ gap: 14 }}>
           <View style={styles.grid}>
-          <Fact half icon="flag" label="Mile" value={`${station.mile}`} />
+          <Fact half icon="flag" label={u.metric ? 'Kilometer' : 'Mile'} value={`${u.distNum(station.mile)}`} />
           {station.kind === 'start' ? (
             <Fact half icon="time" label="Start time" value="Friday, 6:00 AM" />
           ) : (
@@ -230,7 +232,7 @@ export default function AidStationDetail() {
           {!isCutoffOnly && <Fact half icon="bag-handle" label="Drop bags" value={station.dropBags ? 'Yes' : 'No'} />}
           {!isCutoffOnly && <Fact half icon="walk" label="Pacers" value={station.pacerAccess ? 'Allowed' : 'Not allowed'} />}
           </View>
-          {station.driveFromWilsall && <Fact icon="car" label="Drive from Wilsall" value={station.driveFromWilsall} />}
+          {station.driveFromWilsall && <Fact icon="car" label="Drive from Wilsall" value={u.text(station.driveFromWilsall)} />}
           {drive && drive.fromId !== 'start' && (
             <Fact
               icon="car-sport"
@@ -241,7 +243,7 @@ export default function AidStationDetail() {
           {station.locationNote && <Fact
               icon="location"
               label="Location"
-              value={station.locationNote}
+              value={u.text(station.locationNote)}
               copyText={
                 station.driveCoordinate
                   ? `${station.driveCoordinate.latitude}, ${station.driveCoordinate.longitude}`
@@ -282,16 +284,16 @@ export default function AidStationDetail() {
             </Animated.View>
             <View style={styles.legRow}>
               <View style={[styles.legStat, { backgroundColor: t.card, borderColor: t.border }]}>
-                <AnimatedNumber style={[styles.legValue, { color: t.text }]} value={legMiles} decimals={1} suffix=" mi" />
+                <AnimatedNumber style={[styles.legValue, { color: t.text }]} value={u.distNum(legMiles)} decimals={1} suffix={` ${u.distUnit}`} />
                 <Text style={[styles.legLabel, { color: t.muted }]}>Distance</Text>
               </View>
               <View style={[styles.legStat, { backgroundColor: t.card, borderColor: t.border }]}>
-                <AnimatedNumber style={[styles.legValue, { color: t.text }]} value={statLeg!.b.gainFt!} prefix="+" />
-                <Text style={[styles.legLabel, { color: t.muted }]}>Climb (ft)</Text>
+                <AnimatedNumber style={[styles.legValue, { color: t.text }]} value={u.elevNum(statLeg!.b.gainFt!)} prefix="+" />
+                <Text style={[styles.legLabel, { color: t.muted }]}>Climb ({u.elevUnit})</Text>
               </View>
               <View style={[styles.legStat, { backgroundColor: t.card, borderColor: t.border }]}>
-                <AnimatedNumber style={[styles.legValue, { color: t.text }]} value={statLeg!.b.lossFt ?? 0} prefix="−" />
-                <Text style={[styles.legLabel, { color: t.muted }]}>Descent (ft)</Text>
+                <AnimatedNumber style={[styles.legValue, { color: t.text }]} value={u.elevNum(statLeg!.b.lossFt ?? 0)} prefix="−" />
+                <Text style={[styles.legLabel, { color: t.muted }]}>Descent ({u.elevUnit})</Text>
               </View>
             </View>
             <View style={{ marginTop: 14, marginBottom: 4 }} {...swipe.panHandlers} onTouchStart={() => lockBack(true)} onTouchEnd={() => lockBack(false)} onTouchCancel={() => lockBack(false)}>
@@ -306,11 +308,11 @@ export default function AidStationDetail() {
             <Animated.View style={{ opacity: textFade, transform: [{ translateX: textSlide }] }}>
             {trail && (
               <Card style={{ gap: 12, marginTop: 10 }}>
-                <Text style={[styles.noteText, { color: t.text }]}>{trail.text}</Text>
+                <Text style={[styles.noteText, { color: t.text }]}>{u.text(trail.text)}</Text>
                 {trail.warning && (
                   <View style={[styles.warn, { backgroundColor: tint('#e0a100', 0.14) }]}>
                     <Ionicons name="warning" size={18} color="#e0a100" />
-                    <Text style={[styles.noteText, { color: t.text, fontWeight: '700' }]}>{trail.warning}</Text>
+                    <Text style={[styles.noteText, { color: t.text, fontWeight: '700' }]}>{u.text(trail.warning)}</Text>
                   </View>
                 )}
               </Card>
@@ -326,7 +328,7 @@ export default function AidStationDetail() {
               {station.details.map((d, i) => (
                 <View key={d} style={[styles.note2, i > 0 && { borderTopWidth: 1, borderTopColor: t.border }]}>
                   <View style={[styles.dot, { backgroundColor: color }]} />
-                  <Text style={[styles.noteText, { color: t.text }]}>{d}</Text>
+                  <Text style={[styles.noteText, { color: t.text }]}>{u.text(d)}</Text>
                 </View>
               ))}
             </Card>
@@ -340,7 +342,7 @@ export default function AidStationDetail() {
               <View style={styles.navCol}>
                 <Text style={[styles.navCaption, { color: t.muted }]}>PREVIOUS</Text>
                 <Text style={[styles.navText, { color: t.text }]} numberOfLines={1}>{navName(prev.name)}</Text>
-                <Text style={[styles.navMiles, { color: t.muted }]}>{Math.round((station.mile - prev.mile) * 10) / 10} mi back</Text>
+                <Text style={[styles.navMiles, { color: t.muted }]}>{u.dist(Math.round((station.mile - prev.mile) * 10) / 10)} back</Text>
               </View>
             </Pressable>
           ) : (
@@ -351,7 +353,7 @@ export default function AidStationDetail() {
               <View style={[styles.navCol, { alignItems: 'flex-end' }]}>
                 <Text style={[styles.navCaption, { color: t.muted }]}>NEXT</Text>
                 <Text style={[styles.navText, { color: t.text }]} numberOfLines={1}>{navName(next.name)}</Text>
-                <Text style={[styles.navMiles, { color: t.muted }]}>{Math.round((next.mile - station.mile) * 10) / 10} mi ahead</Text>
+                <Text style={[styles.navMiles, { color: t.muted }]}>{u.dist(Math.round((next.mile - station.mile) * 10) / 10)} ahead</Text>
               </View>
               <Ionicons name="chevron-forward" size={22} color={t.primary} />
             </Pressable>

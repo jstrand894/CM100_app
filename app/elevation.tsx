@@ -4,10 +4,10 @@ import { ElevationChart } from '../src/components/ElevationChart';
 import { AID_STATIONS } from '../src/data/aidStations';
 import elevation from '../src/data/elevation.json';
 import { useTheme } from '../src/theme';
+import { useUnits } from '../src/units';
 
 const raceGain = AID_STATIONS.reduce((s, a) => s + (a.gainFt ?? 0), 0);
 const raceLoss = AID_STATIONS.reduce((s, a) => s + (a.lossFt ?? 0), 0);
-const fmt = (n: number) => n.toLocaleString();
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   const t = useTheme();
@@ -22,6 +22,7 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
 
 export default function ElevationScreen() {
   const t = useTheme();
+  const u = useUnits();
   const legs = AID_STATIONS.filter((s) => s.gainFt != null);
   return (
     <ScrollView style={{ backgroundColor: t.bg }} contentContainerStyle={styles.content}>
@@ -30,14 +31,14 @@ export default function ElevationScreen() {
       </Card>
 
       <View style={styles.grid}>
-        <Stat label="Gain (race chart)" value={`${fmt(raceGain)} ft`} sub="Published by the race" />
-        <Stat label="Loss (race chart)" value={`${fmt(raceLoss)} ft`} sub="Published by the race" />
-        <Stat label="High point" value={`${fmt(elevation.maxFt)} ft`} sub="From USGS terrain" />
-        <Stat label="Low point" value={`${fmt(elevation.minFt)} ft`} sub="From USGS terrain" />
+        <Stat label="Gain (race chart)" value={u.elev(raceGain)} sub="Published by the race" />
+        <Stat label="Loss (race chart)" value={u.elev(raceLoss)} sub="Published by the race" />
+        <Stat label="High point" value={u.elev(elevation.maxFt)} sub="From USGS terrain" />
+        <Stat label="Low point" value={u.elev(elevation.minFt)} sub="From USGS terrain" />
       </View>
       <Text style={[styles.note, { color: t.muted }]}>
-        The chart is built from USGS terrain data under the course GPX. It measures {fmt(elevation.gainFt)} ft of gain and{' '}
-        {fmt(elevation.lossFt)} ft of loss, which reads lower than the race's figures because terrain models smooth out short steep
+        The chart is built from USGS terrain data under the course GPX. It measures {u.elev(elevation.gainFt)} of gain and{' '}
+        {u.elev(elevation.lossFt)} of loss, which reads lower than the race's figures because terrain models smooth out short steep
         sections. Watches read differently again.
       </Text>
 
@@ -47,15 +48,15 @@ export default function ElevationScreen() {
           <View key={s.id} style={[styles.leg, i > 0 && { borderTopWidth: 1, borderTopColor: t.border }]}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.legName, { color: t.text }]}>{s.name}</Text>
-              <Text style={[styles.legMile, { color: t.muted }]}>Mile {s.mile}</Text>
+              <Text style={[styles.legMile, { color: t.muted }]}>{u.metric ? 'Km' : 'Mile'} {u.distNum(s.mile)}</Text>
             </View>
-            <Text style={[styles.legUp, { color: t.red }]}>+{fmt(s.gainFt!)}</Text>
-            <Text style={[styles.legDown, { color: t.green }]}>−{fmt(s.lossFt ?? 0)}</Text>
+            <Text style={[styles.legUp, { color: t.red }]}>+{u.elevPlain(s.gainFt!)}</Text>
+            <Text style={[styles.legDown, { color: t.green }]}>−{u.elevPlain(s.lossFt ?? 0)}</Text>
           </View>
         ))}
       </Card>
       <Text style={[styles.note, { color: t.muted }]}>
-        Gain and loss are the climbing and descending between the previous station and this one, in feet.
+        Gain and loss are the climbing and descending between the previous station and this one, in {u.metric ? 'meters' : 'feet'}.
       </Text>
     </ScrollView>
   );

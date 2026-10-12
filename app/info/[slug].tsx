@@ -5,9 +5,11 @@ import { Alert } from '../../src/alert';
 import { Card, DetailHeader, SectionTitle } from '../../src/components/ui';
 import { INFO_PAGES, MENU } from '../../src/data/info';
 import { useTheme } from '../../src/theme';
+import { useUnits } from '../../src/units';
 
 export default function InfoScreen() {
   const t = useTheme();
+  const u = useUnits();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const page = INFO_PAGES[slug];
   const meta = MENU.find((m) => m.slug === slug);
@@ -40,8 +42,8 @@ export default function InfoScreen() {
                 >
                   <Ionicons name="call" size={30} color="#ffffff" />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.urgentTitle}>{row.title}</Text>
-                    {row.body && <Text style={styles.urgentBody}>{row.body}</Text>}
+                    <Text style={styles.urgentTitle}>{u.text(row.title)}</Text>
+                    {row.body && <Text style={styles.urgentBody}>{u.text(row.body)}</Text>}
                   </View>
                   <Ionicons name="chevron-forward" size={22} color="#ffffff" />
                 </Pressable>
@@ -54,8 +56,8 @@ export default function InfoScreen() {
                 const inner = (
                   <View style={[styles.row, i > 0 && { borderTopWidth: 1, borderTopColor: t.border }]}>
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.rowTitle, { color: row.href ? t.primary : t.text }]}>{row.title}</Text>
-                      {row.body && <Text style={[styles.rowBody, { color: t.muted }]}>{row.body}</Text>}
+                      <Text style={[styles.rowTitle, { color: row.href ? t.primary : t.text }]}>{u.text(row.title)}</Text>
+                      {row.body && <Text style={[styles.rowBody, { color: t.muted }]}>{u.text(row.body)}</Text>}
                     </View>
                     {row.href && <Ionicons name="open-outline" size={18} color={t.primary} />}
                   </View>
