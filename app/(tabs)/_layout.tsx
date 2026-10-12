@@ -20,7 +20,7 @@ export default function TabLayout() {
         headerStyle: { backgroundColor: t.bg },
         headerTintColor: t.text,
         headerShadowVisible: false,
-        animation: 'fade',
+        animation: 'none',
         sceneStyle: { backgroundColor: t.bg },
       }}
     >
