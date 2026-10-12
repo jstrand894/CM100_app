@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { useEffect, useState } from 'react';
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { DevSettings, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Alert } from '../src/alert';
 import { Card, DetailHeader, ListRow, SectionTitle } from '../src/components/ui';
 import { agoLabel } from '../src/data/news';
@@ -77,6 +77,15 @@ export default function SettingsScreen() {
         },
       },
     ]);
+
+  // Wipes all saved data, then restarts so every in-memory copy (runners, notifications, theme) starts fresh.
+  const resetApp = async () => {
+    await AsyncStorage.clear().catch(() => {});
+    applyTheme('system');
+    if (Platform.OS === 'web') window.location.reload();
+    else if (__DEV__) DevSettings.reload();
+    else Alert.alert('Reset done', 'Close the app completely and open it again to start fresh.');
+  };
 
   const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
@@ -191,6 +200,23 @@ export default function SettingsScreen() {
             danger
             last
             onPress={() => confirm('Clear saved news and weather?', 'You will need signal to see them again until they re-download.', CACHE_KEYS)}
+          />
+        </Card>
+
+        <SectionTitle>Start over</SectionTitle>
+        <Card style={styles.list}>
+          <ListRow
+            icon="refresh-outline"
+            title="Reset app"
+            sub="Erase everything saved and show the welcome screen again"
+            danger
+            last
+            onPress={() =>
+              Alert.alert('Reset the whole app?', 'This erases your runners, goal times, logged times, settings and saved news. The app restarts as if it were new.', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Reset', style: 'destructive', onPress: resetApp },
+              ])
+            }
           />
         </Card>
 
