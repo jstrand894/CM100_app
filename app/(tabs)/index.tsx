@@ -207,6 +207,7 @@ export default function HomeScreen() {
   const news = useNews();
   const notices = useNotifications();
   const prep = useOfflinePrep();
+  const [prepOpen, setPrepOpen] = useState(false);
   const latest = news.posts[0];
   // Pull down to check for new news. Keep the spinner up briefly even when the check is instant.
   const [pulling, setPulling] = useState(false);
@@ -264,14 +265,25 @@ export default function HomeScreen() {
           <View style={[styles.grabber, { backgroundColor: t.border }]} />
         {online && prep.ready === false && (
           <View style={[styles.prep, { backgroundColor: t.card, borderColor: t.accent }]}>
-            <View style={styles.newsTop}>
+            <Pressable
+              onPress={() => setPrepOpen((o) => !o)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: prepOpen }}
+              accessibilityLabel="Save for offline"
+              style={styles.prepBar}
+            >
               <Ionicons name="cloud-download-outline" size={20} color={t.accent} />
-              <Text style={[styles.newsKicker, { color: t.text }]}>SAVE FOR OFFLINE</Text>
-            </View>
-            <Text style={[styles.newsBody, { color: t.muted, marginBottom: 10 }]}>
-              You have service now. Save news, weather and announcements before you head out of range.
-            </Text>
-            <OfflineAction prep={prep} compact />
+              <Text style={[styles.newsKicker, { color: t.text, flex: 1 }]}>SAVE FOR OFFLINE</Text>
+              <Ionicons name={prepOpen ? 'chevron-up' : 'chevron-down'} size={18} color={t.muted} />
+            </Pressable>
+            {prepOpen && (
+              <View style={{ marginTop: 8 }}>
+                <Text style={[styles.newsBody, { color: t.muted, marginBottom: 10 }]}>
+                  You have service now. Save news, weather and announcements before you head out of range.
+                </Text>
+                <OfflineAction prep={prep} compact />
+              </View>
+            )}
           </View>
         )}
         <View style={[styles.countdown, { backgroundColor: t.card, borderColor: t.border }]}>
@@ -426,7 +438,8 @@ const styles = StyleSheet.create({
   gear: { position: 'absolute', right: 14, flexDirection: 'row' },
   bellBadge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fbf7f0' },
   bellBadgeText: { color: '#ffffff', fontSize: 10, fontWeight: '900' },
-  prep: { borderRadius: 18, borderWidth: 2, padding: 14, marginBottom: 14 },
+  prep: { borderRadius: 18, borderWidth: 2, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 14 },
+  prepBar: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 28 },
   gearBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(11,74,107,0.10)' },
   hero: { position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center' },
   sheet: {
