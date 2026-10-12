@@ -116,7 +116,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 const SELECTED_SCALE = 1.04;
 
-// Grows the selected station card slightly; the fixed frame is scaled to match.
+// Grows the selected station card slightly.
 function Grow({ active, children }: { active: boolean; children: ReactNode }) {
   const v = useRef(new Animated.Value(active ? 1 : 0)).current;
   useEffect(() => {
@@ -317,17 +317,6 @@ export default function CourseScreen() {
     scrollRef.current?.scrollTo({ y: Math.max(r.y - SLOT, 0), animated: true });
   }, []);
 
-  const cardH = useRef<Record<string, number>>({});
-  const frameH = useRef(new Animated.Value(96)).current;
-  const sizeFrame = useCallback(
-    (id: string) => {
-      const h = cardH.current[id];
-      if (h) Animated.timing(frameH, { toValue: h, duration: 180, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
-    },
-    [frameH],
-  );
-  useEffect(() => sizeFrame(activeId), [activeId, sizeFrame]);
-
   const onRowLayout = (id: string) => (e: LayoutChangeEvent) => {
     rows.current[id] = { y: e.nativeEvent.layout.y, h: e.nativeEvent.layout.height };
     recompute();
@@ -384,13 +373,9 @@ export default function CourseScreen() {
               <Grow active={item.id === activeId}>
               <Link href={{ pathname: '/aid/[id]', params: { id: item.id } }} asChild>
                 <Pressable
-                  onLayout={(e) => {
-                    cardH.current[item.id] = e.nativeEvent.layout.height;
-                    if (item.id === activeId) sizeFrame(item.id);
-                  }}
                   style={StyleSheet.flatten([
                     styles.row,
-                    { backgroundColor: t.card, borderColor: t.border, borderWidth: 1 },
+                    { backgroundColor: item.id === activeId ? t.primarySoft : t.card, borderColor: item.id === activeId ? t.primarySoft : t.border, borderWidth: 1 },
                   ])}
                 >
                   <View style={styles.badge}>
@@ -440,8 +425,6 @@ export default function CourseScreen() {
           );
         })}
       </ScrollView>
-      {/* Fixed selection frame: the list scrolls underneath it, so it never slides away with a row. */}
-      <Animated.View pointerEvents="none" style={[styles.frame, { height: frameH, transform: [{ scale: SELECTED_SCALE }], backgroundColor: tint(t.primary, 0.12) }]} />
       </View>
     </View>
   );
@@ -455,7 +438,6 @@ const styles = StyleSheet.create({
   sub: { color: '#bcd6e6', fontSize: 13, fontWeight: '600', marginLeft: 8, marginTop: 2, marginBottom: 10 },
   chart: { marginHorizontal: -4 },
   content: { padding: 16, paddingTop: 12 },
-  frame: { position: 'absolute', top: 12, left: 16, right: 16, borderRadius: 18 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 18, gap: 12 },
   badge: { width: 60, height: 60, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   badgeNum: { fontSize: 24, fontWeight: '700', letterSpacing: -0.8, fontVariant: ['tabular-nums'], lineHeight: 26 },
