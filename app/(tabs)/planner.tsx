@@ -112,6 +112,25 @@ function TimeField({ minutes, onChange }: { minutes: number; onChange: (minutesO
   );
 }
 
+// Timeline circle: when a station is checked in, a green disc with a check mark pops in over it.
+function TimelineDot({ logged, selected, behind }: { logged: boolean; selected: boolean; behind: boolean }) {
+  const t = useTheme();
+  const pop = useRef(new Animated.Value(logged ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.spring(pop, { toValue: logged ? 1 : 0, friction: 4, tension: 150, useNativeDriver: true }).start();
+  }, [logged, pop]);
+  return (
+    <View
+      pointerEvents="none"
+      style={[styles.dot, { borderColor: behind ? t.red : logged ? t.green : selected ? t.primary : t.muted, backgroundColor: selected ? t.primary : t.bg }]}
+    >
+      <Animated.View style={[styles.dotFill, { backgroundColor: t.green, opacity: pop, transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) }] }]}>
+        <Ionicons name="checkmark" size={11} color="#ffffff" />
+      </Animated.View>
+    </View>
+  );
+}
+
 function HowItWorks({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const u = useUnits();
   const t = useTheme();
@@ -162,6 +181,7 @@ export default function PlannerScreen() {
   const [entry, setEntry] = useState<number | null>(null); // absolute minutes being entered
   const [info, setInfo] = useState(false);
   const scroller = useRef<ScrollView>(null);
+  const rowY = useRef<Record<string, number>>({}); // y of each arrival-time row, to bring a checked-in row into view
   const insets = useSafeAreaInsets();
   const [expanded, setExpanded] = useState(false);
   // Glow on the next-stop card: strong on new info, then a softer glow that stays until the user opens or closes the card.
@@ -465,6 +485,14 @@ export default function PlannerScreen() {
     prevKey.current = nextKey;
   }, [nextKey, pulse]);
 
+  // Checking in from the pinned bar jumps back up, but keeps the row that was just checked in on screen under the bar.
+  const checkInFromBar = () => {
+    if (saving) return;
+    const id = sel;
+    saveEntry();
+    setTimeout(() => scroller.current?.scrollTo({ y: Math.max((rowY.current[id] ?? 0) - 84, 0), animated: true }), 80);
+  };
+
   // When the check-in card scrolls out of view, a slim bar stays pinned at the top with the station, time and Check in.
   const [cardBottom, setCardBottom] = useState(260);
   const [pinned, setPinned] = useState(false);
@@ -733,6 +761,9 @@ export default function PlannerScreen() {
           return (
             <Pressable
               key={s.id}
+              onLayout={(e) => {
+                rowY.current[s.id] = e.nativeEvent.layout.y;
+              }}
               disabled={!canLog}
               onPress={() => {
                 choose(s.id);
@@ -744,15 +775,7 @@ export default function PlannerScreen() {
                 pointerEvents="none"
                 style={[styles.railLine, { backgroundColor: t.border }, idx === 0 ? { top: 24 } : { top: 0 }, idx === AID_STATIONS.length - 1 ? { height: 24 } : { bottom: 0 }]}
               />
-              <View
-                pointerEvents="none"
-                style={[
-                  styles.dot,
-                  { borderColor: behind ? t.red : isLogged ? t.green : selected ? t.primary : t.muted, backgroundColor: isLogged ? t.green : selected ? t.primary : t.bg },
-                ]}
-              >
-                {isLogged && <Ionicons name="checkmark" size={10} color="#ffffff" />}
-              </View>
+              <TimelineDot logged={isLogged} selected={selected} behind={behind} />
               <View style={styles.rowTop}>
                 <View style={{ flex: 1 }}>
                   <View style={styles.nameRow}>
@@ -818,7 +841,7 @@ export default function PlannerScreen() {
             <Text style={[styles.pinCaption, { color: t.muted }]} numberOfLines={1}>{`${rs.active.name.toUpperCase()} ARRIVED AT`}</Text>
             <Text style={[styles.pinTitle, { color: t.text }]} numberOfLines={1}>{`${shortName(selStation.name)} · ${absLabel(entryAbs)}`}</Text>
           </Pressable>
-          <Pressable onPress={saveEntry} disabled={saving} style={[styles.pinBtn, { backgroundColor: saving ? t.green : t.primary }]} accessibilityRole="button" accessibilityLabel={`Check in at ${absLabel(entryAbs)}`}>
+          <Pressable onPress={checkInFromBar} disabled={saving} style={[styles.pinBtn, { backgroundColor: saving ? t.green : t.primary }]} accessibilityRole="button" accessibilityLabel={`Check in at ${absLabel(entryAbs)}`}>
             <Text style={styles.pinBtnText}>{saving ? 'Checked in' : 'Check in'}</Text>
           </Pressable>
         </Animated.View>
@@ -881,6 +904,7 @@ const styles = StyleSheet.create({
   saveText: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
   tlRow: { paddingLeft: 40, paddingRight: 10, paddingVertical: 12, borderRadius: 14 },
   railLine: { position: 'absolute', left: 17, width: 2 },
+  dotFill: { position: 'absolute', top: -2, left: -2, right: -2, bottom: -2, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   dot: { position: 'absolute', left: 9, top: 16, width: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   listHead: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
   row: { borderRadius: 16, borderWidth: 1, padding: 14, marginBottom: 10 },
