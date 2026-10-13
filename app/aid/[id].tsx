@@ -181,22 +181,18 @@ export default function AidStationDetail() {
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <DetailHeader
         compact
-        right={
-          <View style={styles.navPills}>
-            {prev && (
-              <Pressable onPress={() => go(idx - 1)} accessibilityRole="button" accessibilityLabel={`Previous: ${navName(prev.name)}`} style={({ pressed }) => [styles.navPill, pressed && { opacity: 0.7 }]}>
-                <Ionicons name="chevron-back" size={16} color="#ffffff" />
-                <Text style={styles.navPillText} numberOfLines={1}>{navName(prev.name)}</Text>
-              </Pressable>
-            )}
-            {next && (
-              <Pressable onPress={() => go(idx + 1)} accessibilityRole="button" accessibilityLabel={`Next: ${navName(next.name)}`} style={({ pressed }) => [styles.navPill, pressed && { opacity: 0.7 }]}>
-                <Text style={styles.navPillText} numberOfLines={1}>{navName(next.name)}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#ffffff" />
-              </Pressable>
-            )}
-          </View>
-        }
+        flank={{
+          left: prev && (
+            <Pressable onPress={() => go(idx - 1)} accessibilityRole="button" accessibilityLabel={`Previous: ${navName(prev.name)}`} style={({ pressed }) => [styles.navCircle, pressed && { opacity: 0.7 }]}>
+              <Ionicons name="chevron-back" size={30} color="#ffffff" />
+            </Pressable>
+          ),
+          right: next && (
+            <Pressable onPress={() => go(idx + 1)} accessibilityRole="button" accessibilityLabel={`Next: ${navName(next.name)}`} style={({ pressed }) => [styles.navCircle, pressed && { opacity: 0.7 }]}>
+              <Ionicons name="chevron-forward" size={30} color="#ffffff" />
+            </Pressable>
+          ),
+        }}
         title={station.name}
         subtitle={`${u.metric ? 'Km' : 'Mile'} ${u.distNum(station.mile)}${cutoffHours != null ? ` · Cutoff ${clockLabel(cutoffHours)}` : ''}`}>
         <View style={styles.pills}>
@@ -361,7 +357,7 @@ export default function AidStationDetail() {
 
 const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 40 },
-  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 12 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
   pillText: { fontSize: 13, fontWeight: '800' },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16 },
@@ -387,7 +383,5 @@ const styles = StyleSheet.create({
   segThumb: { position: 'absolute', top: 4, left: 4, bottom: 4, borderRadius: 11 },
   segBtn: { flex: 1, alignItems: 'center', paddingVertical: 9 },
   segText: { fontSize: 14, fontWeight: '800' },
-  navPills: { flexDirection: 'row', gap: 6, flexShrink: 1 },
-  navPill: { flexDirection: 'row', alignItems: 'center', gap: 2, height: 32, paddingHorizontal: 8, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.18)', flexShrink: 1 },
-  navPillText: { color: '#ffffff', fontSize: 13, fontWeight: '700', flexShrink: 1, maxWidth: 96 },
+  navCircle: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.18)' },
 });

@@ -43,7 +43,7 @@ export function ScreenHeader({ title, subtitle }: { title: string; subtitle?: st
 }
 
 // Blue header for pushed (non-tab) screens, with a back button and optional right-hand content.
-export function DetailHeader({ title, subtitle, children, right, compact }: { title: string; subtitle?: string; children?: ReactNode; right?: ReactNode; compact?: boolean }) {
+export function DetailHeader({ title, subtitle, children, right, compact, flank }: { title: string; subtitle?: string; children?: ReactNode; right?: ReactNode; compact?: boolean; flank?: { left?: ReactNode; right?: ReactNode } }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.header, { paddingTop: insets.top + 6 }, compact && { paddingBottom: 14 }]}>
@@ -54,9 +54,23 @@ export function DetailHeader({ title, subtitle, children, right, compact }: { ti
         </Pressable>
         {right}
       </View>
-      <Text style={styles.headerTitle}>{title}</Text>
-      {subtitle ? <Text style={styles.headerSub}>{subtitle}</Text> : null}
-      {children}
+      {flank ? (
+        // Large buttons either side of the title, with the title and everything under it centred.
+        <View style={styles.flankRow}>
+          <View style={styles.flankSlot}>{flank.left}</View>
+          <View style={{ flex: 1, alignItems: 'center' }}>
+            <Text style={[styles.headerTitle, { textAlign: 'center' }]}>{title}</Text>
+            {subtitle ? <Text style={[styles.headerSub, { textAlign: 'center' }]}>{subtitle}</Text> : null}
+          </View>
+          <View style={styles.flankSlot}>{flank.right}</View>
+        </View>
+      ) : (
+        <>
+          <Text style={styles.headerTitle}>{title}</Text>
+          {subtitle ? <Text style={styles.headerSub}>{subtitle}</Text> : null}
+        </>
+      )}
+      {flank ? <View style={{ alignItems: 'center' }}>{children}</View> : children}
     </View>
   );
 }
@@ -174,6 +188,8 @@ const styles = StyleSheet.create({
   badgeText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
   header: { backgroundColor: BRAND_BLUE, paddingHorizontal: 20, paddingBottom: 22, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   backRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 },
+  flankRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  flankSlot: { width: 52, alignItems: 'center' },
   back: { flexDirection: 'row', alignItems: 'center', marginLeft: -6 },
   backText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
   headerTitle: { color: '#ffffff', fontSize: 28, fontWeight: '800' },
