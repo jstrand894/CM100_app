@@ -58,7 +58,7 @@ export function StationMapFrame({ route, render }: { route: StationRoute; render
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 18, borderWidth: 1, overflow: 'hidden', marginTop: 14 },
+  card: { borderRadius: 18, borderWidth: 1, overflow: 'hidden', marginTop: 12 },
   mapBox: { height: 230, backgroundColor: '#e9eef2' },
   expand: { position: 'absolute', top: 10, right: 10, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(11,74,107,0.9)' },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingHorizontal: 14, paddingVertical: 10 },

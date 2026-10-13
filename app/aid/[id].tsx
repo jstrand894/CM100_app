@@ -232,7 +232,7 @@ export default function AidStationDetail() {
       <Animated.View style={{ flex: 1, transform: [{ translateX: slide }] }}>
       <ScrollView ref={scroller} contentContainerStyle={styles.content}>
         <SectionTitle>At a glance</SectionTitle>
-        <Card style={{ gap: 14 }}>
+        <Card style={{ gap: 14, marginBottom: 0 }}>
           <View style={styles.grid}>
           <Fact half icon="flag" label={u.metric ? 'Kilometer' : 'Mile'} value={`${u.distNum(station.mile)}`} />
           {station.kind === 'start' ? (
@@ -262,6 +262,25 @@ export default function AidStationDetail() {
               }
             />}
         </Card>
+
+        {station.driveCoordinate ? (
+          <Pressable onPress={openMaps} style={({ pressed }) => [styles.cta, { backgroundColor: t.primary }, pressed && { opacity: 0.85 }]}>
+            <Ionicons name="navigate" size={20} color="#ffffff" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.ctaTitle}>Directions in Maps</Text>
+              <Text style={styles.ctaSub}>Needs signal. Download the area in Maps ahead of time.</Text>
+            </View>
+            <Ionicons name="open-outline" size={18} color="#ffffff" />
+          </Pressable>
+        ) : (
+          station.crewAccess !== 'no' && (
+            <Card style={{ marginTop: 12, marginBottom: 0 }}>
+              <Text style={[styles.note, { color: t.muted }]}>
+                Parking coordinates for this station haven't been added yet. Use the written directions below. Offline routing is planned.
+              </Text>
+            </Card>
+          )
+        )}
 
         {leg && (
           <>
@@ -307,7 +326,7 @@ export default function AidStationDetail() {
                 <Text style={[styles.legLabel, { color: t.muted }]}>Descent ({u.elevUnit})</Text>
               </View>
             </View>
-            <View style={{ marginTop: 14, marginBottom: 4 }} {...swipe.panHandlers} onTouchStart={() => lockBack(true)} onTouchEnd={() => lockBack(false)} onTouchCancel={() => lockBack(false)}>
+            <View style={{ marginTop: 12 }} {...swipe.panHandlers} onTouchStart={() => lockBack(true)} onTouchEnd={() => lockBack(false)} onTouchCancel={() => lockBack(false)}>
               <LegProfile
                 prev={prev ? { name: shortName(prev.name), mile: prev.mile } : null}
                 station={{ name: shortName(station.name), mile: station.mile }}
@@ -318,7 +337,7 @@ export default function AidStationDetail() {
             </View>
             <Animated.View style={{ opacity: textFade, transform: [{ translateX: textSlide }] }}>
             {trail && (
-              <Card style={{ gap: 12, marginTop: 10 }}>
+              <Card style={{ gap: 12, marginTop: 12, marginBottom: 0 }}>
                 <Text style={[styles.noteText, { color: t.text }]}>{u.text(trail.text)}</Text>
                 {trail.warning && (
                   <View style={[styles.warn, { backgroundColor: tint('#e0a100', 0.14) }]}>
@@ -334,29 +353,10 @@ export default function AidStationDetail() {
 
         <StationMap id={station.id} />
 
-        {station.driveCoordinate ? (
-          <Pressable onPress={openMaps} style={({ pressed }) => [styles.cta, { backgroundColor: t.primary }, pressed && { opacity: 0.85 }]}>
-            <Ionicons name="navigate" size={20} color="#ffffff" />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.ctaTitle}>Directions in Maps</Text>
-              <Text style={styles.ctaSub}>Needs signal. Download the area in Maps ahead of time.</Text>
-            </View>
-            <Ionicons name="open-outline" size={18} color="#ffffff" />
-          </Pressable>
-        ) : (
-          station.crewAccess !== 'no' && (
-            <Card>
-              <Text style={[styles.note, { color: t.muted }]}>
-                Parking coordinates for this station haven't been added yet. Use the written directions below. Offline routing is planned.
-              </Text>
-            </Card>
-          )
-        )}
-
         {station.details.length > 0 && (
           <>
             <SectionTitle>Crew notes</SectionTitle>
-            <Card style={{ paddingVertical: 6 }}>
+            <Card style={{ paddingVertical: 6, marginBottom: 0 }}>
               {station.details.map((d, i) => (
                 <View key={d} style={[styles.note2, i > 0 && { borderTopWidth: 1, borderTopColor: t.border }]}>
                   <View style={[styles.dot, { backgroundColor: color }]} />
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
   copyText: { fontSize: 13, fontWeight: '800' },
   factLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' },
   factValue: { fontSize: 16, fontWeight: '600', marginTop: 1 },
-  legRow: { flexDirection: 'row', gap: 10 },
+  legRow: { flexDirection: 'row', gap: 12 },
   legStat: { flex: 1, borderRadius: 14, borderWidth: 1, paddingVertical: 12, alignItems: 'center' },
   legValue: { fontSize: 18, fontWeight: '900' },
   legLabel: { fontSize: 11, fontWeight: '700', marginTop: 2 },
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4, marginTop: 7 },
   noteText: { flex: 1, fontSize: 14, lineHeight: 21 },
   warn: { flexDirection: 'row', gap: 10, padding: 12, borderRadius: 12, alignItems: 'flex-start' },
-  seg: { flexDirection: 'row', borderRadius: 14, borderWidth: 1, padding: 4, marginTop: 10 },
+  seg: { flexDirection: 'row', borderRadius: 14, borderWidth: 1, padding: 4, marginTop: 12 },
   segThumb: { position: 'absolute', top: 4, left: 4, bottom: 4, borderRadius: 11 },
   segBtn: { flex: 1, alignItems: 'center', paddingVertical: 9 },
   segText: { fontSize: 14, fontWeight: '800' },
