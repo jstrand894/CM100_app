@@ -34,7 +34,8 @@ export const CREW_DRIVE: { id: string; fromId: string; minutes: number; approx?:
   { id: 'half-moon', fromId: 'ibex', minutes: 127 },
   { id: 'sunlight', fromId: 'half-moon', minutes: 136, hikeMinutes: 15 },
   { id: 'crandall', fromId: 'sunlight', minutes: 16, hikeMinutes: 15 },
-  { id: 'forest-lake', fromId: 'crandall', minutes: 135 },
+  // The race warns this drive is close to 3 hours on a rough road, so most crews cannot see a runner at both Crandall Creek and Forest Lake.
+  { id: 'forest-lake', fromId: 'crandall', minutes: 170, approx: true },
   { id: 'finish', fromId: 'forest-lake', minutes: 87, approx: true },
 ];
 

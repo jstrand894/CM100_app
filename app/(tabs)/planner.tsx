@@ -421,7 +421,10 @@ export default function PlannerScreen() {
     const miles = Math.round((nextSt.mile - from.mile) * 10) / 10;
     const cutoffH = CUTOFF_HOURS[nextSt.id];
     const margin = cutoffH != null ? cutoffH - elapsed[nextSt.id] : null;
-    return { empty: false as const, from, nextSt, between, nextAbs, legMin, miles, margin };
+    const cl = crewLeg(nextSt.id, elapsed);
+    const cdn = drive[nextSt.id];
+    const crew = cl && cdn ? { fromName: shortName(AID_STATIONS.find((a) => a.id === cdn.fromId)!.name), leaveBy: START_ABS + Math.round(cl.leaveByMin), driveMin: cdn.minutes, approx: !!cdn.approx, slack: cl.slackMin } : null;
+    return { empty: false as const, from, nextSt, between, nextAbs, legMin, miles, margin, crew };
   })();
 
   // Station name, mile and the plan's time for it. Rendered twice during a change (outgoing and incoming).
@@ -495,13 +498,16 @@ export default function PlannerScreen() {
         <View style={styles.top} {...pan.panHandlers}>
           <Animated.View style={{ transform: [{ scale: pop }] }}>
           <Animated.View pointerEvents="none" style={[styles.halo, { backgroundColor: t.accent, opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0, 0.75] }) }]} />
-          <Pressable onPress={() => setOpen(!expanded)} style={[styles.result, { backgroundColor: t.primary }]} accessibilityRole="button" accessibilityLabel={`Next crew stop ${shortName(nextCard.nextSt.name)} at ${absLabel(nextCard.nextAbs)}. ${expanded ? 'Collapse' : 'Expand'} details`}>
+          <Pressable onPress={() => setOpen(!expanded)} style={[styles.result, { backgroundColor: t.primary }]} accessibilityRole="button" accessibilityLabel={`Next crew stop ${shortName(nextCard.nextSt.name)}, runner arrives ${absLabel(nextCard.nextAbs)}. ${expanded ? 'Collapse' : 'Expand'} details`}>
             <View style={styles.resultBar}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.resultKicker}>NEXT CREW STOP</Text>
                 <Text style={styles.resultTitle} numberOfLines={1}>{shortName(nextCard.nextSt.name)}</Text>
               </View>
-              <Text style={styles.resultTime}>{absLabel(nextCard.nextAbs)}</Text>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.resultCaption}>RUNNER ARRIVES</Text>
+                <Text style={styles.resultTime}>{absLabel(nextCard.nextAbs)}</Text>
+              </View>
               <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={20} color="#ffffff" />
             </View>
             {expanded && (
@@ -512,11 +518,18 @@ export default function PlannerScreen() {
                   </Text>
                 )}
                 <Text style={styles.resultMeta}>
-                  {`${u.dist(nextCard.miles)} from ${shortName(nextCard.from.name)} (left ${absLabel(logs[nextCard.from.id]).replace(/^\w+ /, '')}) · about ${durationLabel(nextCard.legMin / 60)}`}
+                  {`Runner: ${u.dist(nextCard.miles)} from ${shortName(nextCard.from.name)} (left ${absLabel(logs[nextCard.from.id]).replace(/^\w+ /, '')}), about ${durationLabel(nextCard.legMin / 60)} of running`}
                   {nextCard.margin != null
-                    ? ` · ${durationLabel(nextCard.margin)} ${nextCard.margin >= 0 ? 'ahead of' : 'behind'} cutoff`
+                    ? ` · ${durationLabel(Math.abs(nextCard.margin))} ${nextCard.margin >= 0 ? 'ahead of' : 'behind'} the cutoff`
                     : ''}
                 </Text>
+                {nextCard.crew && (
+                  <Text style={styles.resultMeta}>
+                    {nextCard.crew.slack < 0
+                      ? `Crew drive: can't make it from ${nextCard.crew.fromName}. The ${nextCard.crew.approx ? '~' : ''}${durationLabel(nextCard.crew.driveMin / 60)} drive leaves crew about ${durationLabel(-nextCard.crew.slack / 60)} short.`
+                      : `Crew drive: leave ${nextCard.crew.fromName} by ${absLabel(nextCard.crew.leaveBy).replace(/^\w+ /, '')} (${nextCard.crew.approx ? '~' : ''}${durationLabel(nextCard.crew.driveMin / 60)} drive).`}
+                  </Text>
+                )}
                 <Pressable
                   onPress={() => router.push(`/aid/${nextCard.nextSt.id}`)}
                   style={({ pressed }) => [styles.directions, pressed && { opacity: 0.75 }]}
@@ -735,8 +748,8 @@ export default function PlannerScreen() {
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={[styles.etaCaption, { color: t.muted }]}>{s.kind === 'start' ? 'Start' : isLogged ? 'Runner arrived' : isEst ? 'Runner est.' : 'Runner arrives'}</Text>
                   <Text style={[styles.eta, { color: isLogged ? t.green : t.primary }]}>{s.kind === 'start' ? 'Fri 6:00 AM' : clockLabel(e)}</Text>
-                  {isEst && <Text style={[styles.logged, { color: t.muted }]}>Estimated</Text>}
                   {canLog && !isLogged && !passed && (
                     <Text style={[styles.logged, { color: t.primary }]}>Tap to log</Text>
                   )}
@@ -760,8 +773,8 @@ export default function PlannerScreen() {
                   <Ionicons name="car" size={13} color={slack < 0 ? t.red : slack < 30 ? t.amber : t.primary} />
                   <Text style={[styles.tagText, { color: slack < 0 ? t.red : slack < 30 ? t.amber : t.primary }]}>
                     {slack < 0
-                      ? `Crew can't make it from ${prevName}: about ${durationLabel(slack / 60)} short`
-                      : `Crew: leave ${prevName} by ${absLabel(leaveBy)} (${cd.approx ? '~' : ''}${durationLabel(cd.minutes / 60)} drive)`}
+                      ? `Crew drive: can't make it from ${prevName}. The ${cd.approx ? '~' : ''}${durationLabel(cd.minutes / 60)} drive leaves crew about ${durationLabel(-slack / 60)} short`
+                      : `Crew drive: leave ${prevName} by ${absLabel(leaveBy)} (${cd.approx ? '~' : ''}${durationLabel(cd.minutes / 60)} drive)`}
                   </Text>
                 </View>
               )}
@@ -827,6 +840,7 @@ const styles = StyleSheet.create({
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   name: { fontSize: 16, fontWeight: '800' },
   mile: { fontSize: 12, marginTop: 2 },
+  etaCaption: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' },
   eta: { fontSize: 15, fontWeight: '900' },
   logged: { fontSize: 11, fontWeight: '700', marginTop: 2 },
   nameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
@@ -841,6 +855,7 @@ const styles = StyleSheet.create({
   resultKicker: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 0.6 },
   resultBar: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   resultTitle: { color: '#ffffff', fontSize: 16, fontWeight: '800', marginTop: 1 },
+  resultCaption: { color: 'rgba(255,255,255,0.75)', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
   resultTime: { color: '#ffffff', fontSize: 17, fontWeight: '900' },
   halo: { position: 'absolute', top: -5, bottom: -5, left: -5, right: -5, borderRadius: 19 },
   directions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 46, borderRadius: 12, marginTop: 12, backgroundColor: '#ffffff' },
