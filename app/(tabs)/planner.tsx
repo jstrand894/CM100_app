@@ -261,7 +261,6 @@ export default function PlannerScreen() {
   const selIdx = loggable.findIndex((s) => s.id === sel);
   const selStation = loggable[selIdx];
   const projected = START_ABS + Math.round(proj.elapsed[sel] * 60);
-  const entryAbs = entry ?? Math.round(projected / 5) * 5;
   // Re-check every few seconds so the button wakes up at the gun even if the screen is just sitting open.
   const [raceStarted, setRaceStarted] = useState(() => nowMs() >= START_MS);
   useEffect(() => {
@@ -269,6 +268,15 @@ export default function PlannerScreen() {
     const id = setInterval(() => nowMs() >= START_MS && setRaceStarted(true), 15000);
     return () => clearInterval(id);
   }, [raceStarted]);
+  // Checking in uses the current time, kept fresh while the screen is open. Before the race starts it falls back to the plan's time.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 20000);
+    return () => clearInterval(id);
+  }, []);
+  const liveAbs = Math.min(Math.max(START_ABS + Math.floor((nowMs() - START_MS) / 60000), START_ABS), 2 * DAY - 1);
+  const entryAbs = entry ?? (raceStarted ? liveAbs : Math.round(projected / 5) * 5);
+  const [editTime, setEditTime] = useState(false);
   // Station change is one motion: the old name slides a short way and fades out while the new one slides in and fades up.
   const go = useRef(new Animated.Value(1)).current; // 0 -> 1 across a change
   const [leaving, setLeaving] = useState<string | null>(null); // station sliding out
@@ -307,10 +315,6 @@ export default function PlannerScreen() {
   const step = (d: number) => choose(loggable[Math.min(Math.max(selIdx + d, 0), loggable.length - 1)].id);
   const setDay = (day: number) => setEntry(day * DAY + (entryAbs % DAY));
   const setTimeOfDay = (m: number) => setEntry(Math.floor(entryAbs / DAY) * DAY + m);
-  const useNow = () => {
-    const abs = START_ABS + Math.floor((nowMs() - START_MS) / 60000);
-    setEntry(Math.min(Math.max(abs, START_ABS), 2 * DAY - 1));
-  };
   // Picks the station you are standing at, using the phone's location. One-shot, only when the button is tapped.
   const [locating, setLocating] = useState(false);
   const [locNote, setLocNote] = useState<string | null>(null);
@@ -602,39 +606,49 @@ export default function PlannerScreen() {
               </Pressable>
             </View>
 
-            <View style={styles.timeRow}>
-              <View style={[styles.daySeg, { backgroundColor: t.primarySoft }]}>
-                {['Fri', 'Sat'].map((d, i) => {
-                  const on = Math.floor(entryAbs / DAY) === i;
-                  return (
-                    <Pressable key={d} onPress={() => setDay(i)} style={[styles.segBtn, on && { backgroundColor: t.card }]}>
-                      <Text style={[styles.segText, { color: on ? t.primary : t.muted }]}>{d}</Text>
-                    </Pressable>
-                  );
-                })}
+            <Pressable onPress={() => setEditTime((e) => !e)} disabled={saving} style={styles.timeChip} accessibilityRole="button" accessibilityLabel={`Time ${absLabel(entryAbs)}. Tap to change`}>
+              <Text style={[styles.timeChipText, { color: t.text }]}>{absLabel(entryAbs)}</Text>
+              <Ionicons name={editTime ? 'chevron-up' : 'create-outline'} size={18} color={t.primary} />
+            </Pressable>
+            <Text style={[styles.goalSub, { color: t.muted }]}>
+              {entry != null ? 'Time set by hand' : raceStarted ? 'Current time. Tap it to change.' : "The plan's time. The race hasn't started."}
+            </Text>
+            {editTime && (
+              <View style={styles.timeRow}>
+                <View style={[styles.daySeg, { backgroundColor: t.primarySoft }]}>
+                  {['Fri', 'Sat'].map((d, i) => {
+                    const on = Math.floor(entryAbs / DAY) === i;
+                    return (
+                      <Pressable key={d} onPress={() => setDay(i)} style={[styles.segBtn, on && { backgroundColor: t.card }]}>
+                        <Text style={[styles.segText, { color: on ? t.primary : t.muted }]}>{d}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <TimeField minutes={entryAbs % DAY} onChange={setTimeOfDay} />
               </View>
-              <TimeField minutes={entryAbs % DAY} onChange={setTimeOfDay} />
-            </View>
+            )}
+            {editTime && entry != null && (
+              <Pressable onPress={() => setEntry(null)} hitSlop={8} style={{ alignSelf: 'center', marginTop: 8 }}>
+                <Text style={[styles.link, { color: t.primary }]}>{raceStarted ? 'Use the current time' : "Use the plan's time"}</Text>
+              </Pressable>
+            )}
 
+            <Pressable onPress={() => { setEditTime(false); saveEntry(); }} disabled={saving} style={[styles.save, { backgroundColor: saving ? t.green : t.primary }]} accessibilityLabel={saving ? 'Checked in' : `Check in at ${absLabel(entryAbs)}`}>
+              {saving ? (
+                <Animated.View style={[styles.savedRow, { transform: [{ scale: checkScale }] }]}>
+                  <Ionicons name="checkmark-circle" size={26} color="#ffffff" />
+                  <Text style={styles.saveText}>Checked in</Text>
+                </Animated.View>
+              ) : (
+                <Text style={styles.saveText}>Check in</Text>
+              )}
+            </Pressable>
             <Pressable onPress={useLocation} disabled={locating} style={[styles.bump, { backgroundColor: t.primarySoft, opacity: locating ? 0.6 : 1, marginTop: 10, flexDirection: 'row', gap: 8 }]} accessibilityRole="button" accessibilityLabel="Pick the aid station nearest to my location">
               <Ionicons name="locate" size={18} color={t.primary} />
               <Text style={[styles.bumpText, { color: t.primary }]}>{locating ? 'Finding you…' : 'Use my location for the station'}</Text>
             </Pressable>
             {locNote && <Text style={[styles.goalSub, { color: t.muted }]}>{locNote}</Text>}
-            <Pressable onPress={useNow} disabled={!raceStarted} style={[styles.bump, { backgroundColor: t.primarySoft, opacity: raceStarted ? 1 : 0.5, marginTop: 12 }]}>
-              <Text style={[styles.bumpText, { color: t.primary }]}>Use current time</Text>
-            </Pressable>
-            {!raceStarted && <Text style={[styles.goalSub, { color: t.muted }]}>Available once the race starts</Text>}
-            <Pressable onPress={saveEntry} disabled={saving} style={[styles.save, { backgroundColor: saving ? t.green : t.primary }]} accessibilityLabel={saving ? 'Saved' : `Save ${absLabel(entryAbs)}`}>
-              {saving ? (
-                <Animated.View style={[styles.savedRow, { transform: [{ scale: checkScale }] }]}>
-                  <Ionicons name="checkmark-circle" size={26} color="#ffffff" />
-                  <Text style={styles.saveText}>Saved</Text>
-                </Animated.View>
-              ) : (
-                <Text style={styles.saveText}>{`Save ${absLabel(entryAbs)}`}</Text>
-              )}
-            </Pressable>
             <View style={styles.undoRow}>
               <Pressable onPress={undo} disabled={history.length === 0 || saving} hitSlop={6} style={[styles.undoBtn, { opacity: history.length === 0 || saving ? 0.35 : 1 }]} accessibilityLabel="Undo last change">
                 <Ionicons name="arrow-undo" size={18} color={t.primary} />
@@ -752,6 +766,8 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   headerTitle: { color: '#ffffff', fontSize: 22, fontWeight: '800' },
   top: { paddingHorizontal: 16, paddingTop: 10, zIndex: 2 },
+  timeChip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14, paddingVertical: 6 },
+  timeChipText: { fontSize: 28, fontWeight: '900' },
   timeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 14 },
   content: { padding: 16, paddingBottom: 40 },
   segment: { flexDirection: 'row', borderRadius: 12, padding: 3, backgroundColor: 'rgba(255,255,255,0.18)' },
