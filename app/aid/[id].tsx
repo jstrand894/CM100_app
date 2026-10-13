@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4, marginTop: 7 },
   noteText: { flex: 1, fontSize: 14, lineHeight: 21 },
   warn: { flexDirection: 'row', gap: 10, padding: 12, borderRadius: 12, alignItems: 'flex-start' },
-  seg: { flexDirection: 'row', borderRadius: 14, borderWidth: 1, padding: 4, marginTop: 20 },
+  seg: { flexDirection: 'row', borderRadius: 14, borderWidth: 1, padding: 4, marginTop: 10 },
   segThumb: { position: 'absolute', top: 4, left: 4, bottom: 4, borderRadius: 11 },
   segBtn: { flex: 1, alignItems: 'center', paddingVertical: 9 },
   segText: { fontSize: 14, fontWeight: '800' },
