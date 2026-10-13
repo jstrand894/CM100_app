@@ -18,7 +18,7 @@ const KEY = 'cm100.gear.v1';
 // Ideas for drop bag contents. Not from the race, so they are labeled as ideas.
 const BAG_IDEAS = ['Fresh socks', 'Dry shoes', 'Warm layer', 'Headlamp batteries', 'Favorite food', 'Anti-chafe', 'Phone battery'];
 const BAG_STATIONS = AID_STATIONS.filter((s) => s.dropBags && s.kind !== 'cutoff');
-const stationName = (n: string) => n.replace(/^(Start|Finish): /, '');
+const stationName = (n: string) => n.replace(/^Start: .*$/, 'Start').replace(/^Finish: /, '');
 
 interface Saved {
   checked: Record<string, boolean>;

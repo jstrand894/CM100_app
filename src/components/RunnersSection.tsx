@@ -10,7 +10,7 @@ import { useTheme } from '../theme';
 import { tint } from './ui';
 
 const START_ABS = START_HOUR * 60;
-const shortName = (name: string) => name.replace(/^(Start|Finish): /, '');
+const shortName = (name: string) => name.replace(/^Start: .*$/, 'Start').replace(/^Finish: /, '');
 const goalLabel = (min: number) => `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
 
 type Summary = { goal: number; lastName: string | null; lastAbs: number | null; finishHours: number };

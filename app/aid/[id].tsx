@@ -16,7 +16,7 @@ import { useUnits } from '../../src/units';
 
 // Bottom prev/next buttons are tight on space; the visit suffix is never needed there because the two Cow Camps are never neighbours.
 const navName = (n: string) => shortName(n).replace(/ \(.*\)$/, '');
-const shortName = (n: string) => n.replace(/^(Start|Finish): /, '');
+const shortName = (n: string) => n.replace(/^Start: .*$/, 'Start').replace(/^Finish: /, '');
 const fmt = (n: number) => n.toLocaleString();
 
 function Fact({ icon, label, value, copyText, half }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string; copyText?: string; half?: boolean }) {
@@ -179,8 +179,26 @@ export default function AidStationDetail() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <Animated.View style={{ opacity: fade }}>
-      <DetailHeader title={station.name} subtitle={`${u.metric ? 'Km' : 'Mile'} ${u.distNum(station.mile)}${cutoffHours != null ? ` · Cutoff ${clockLabel(cutoffHours)}` : ''}`}>
+      <DetailHeader
+        compact
+        right={
+          <View style={styles.navPills}>
+            {prev && (
+              <Pressable onPress={() => go(idx - 1)} accessibilityRole="button" accessibilityLabel={`Previous: ${navName(prev.name)}`} style={({ pressed }) => [styles.navPill, pressed && { opacity: 0.7 }]}>
+                <Ionicons name="chevron-back" size={16} color="#ffffff" />
+                <Text style={styles.navPillText} numberOfLines={1}>{navName(prev.name)}</Text>
+              </Pressable>
+            )}
+            {next && (
+              <Pressable onPress={() => go(idx + 1)} accessibilityRole="button" accessibilityLabel={`Next: ${navName(next.name)}`} style={({ pressed }) => [styles.navPill, pressed && { opacity: 0.7 }]}>
+                <Text style={styles.navPillText} numberOfLines={1}>{navName(next.name)}</Text>
+                <Ionicons name="chevron-forward" size={16} color="#ffffff" />
+              </Pressable>
+            )}
+          </View>
+        }
+        title={station.name}
+        subtitle={`${u.metric ? 'Km' : 'Mile'} ${u.distNum(station.mile)}${cutoffHours != null ? ` · Cutoff ${clockLabel(cutoffHours)}` : ''}`}>
         <View style={styles.pills}>
           {station.kind === 'start' && <Pill label="Start 6:00 AM" color="#ffffff" icon="time-outline" />}
           {isCutoffOnly ? (
@@ -196,37 +214,9 @@ export default function AidStationDetail() {
           {station.dropBags && <Pill label="Drop bags" color="#ffb26b" icon="bag-handle" />}
         </View>
       </DetailHeader>
-      </Animated.View>
 
       <Animated.View style={{ flex: 1, transform: [{ translateX: slide }] }}>
       <ScrollView ref={scroller} contentContainerStyle={styles.content}>
-        <View style={styles.nav}>
-          {prev ? (
-            <Pressable onPress={() => go(idx - 1)} accessibilityRole="button" accessibilityLabel={`Previous: ${navName(prev.name)}`} style={({ pressed }) => [styles.navBtn, { backgroundColor: t.card, borderColor: t.border }, pressed && { opacity: 0.7 }]}>
-              <Ionicons name="chevron-back" size={22} color={t.primary} />
-              <View style={styles.navCol}>
-                <Text style={[styles.navCaption, { color: t.muted }]}>PREVIOUS</Text>
-                <Text style={[styles.navText, { color: t.text }]} numberOfLines={1}>{navName(prev.name)}</Text>
-                <Text style={[styles.navMiles, { color: t.muted }]}>{u.dist(Math.round((station.mile - prev.mile) * 10) / 10)} back</Text>
-              </View>
-            </Pressable>
-          ) : (
-            <View style={{ flex: 1 }} />
-          )}
-          {next ? (
-            <Pressable onPress={() => go(idx + 1)} accessibilityRole="button" accessibilityLabel={`Next: ${navName(next.name)}`} style={({ pressed }) => [styles.navBtn, { backgroundColor: t.card, borderColor: t.border }, pressed && { opacity: 0.7 }]}>
-              <View style={[styles.navCol, { alignItems: 'flex-end' }]}>
-                <Text style={[styles.navCaption, { color: t.muted }]}>NEXT</Text>
-                <Text style={[styles.navText, { color: t.text }]} numberOfLines={1}>{navName(next.name)}</Text>
-                <Text style={[styles.navMiles, { color: t.muted }]}>{u.dist(Math.round((next.mile - station.mile) * 10) / 10)} ahead</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={22} color={t.primary} />
-            </Pressable>
-          ) : (
-            <View style={{ flex: 1 }} />
-          )}
-        </View>
-
         <StationMap id={station.id} />
 
         {station.driveCoordinate ? (
@@ -397,10 +387,7 @@ const styles = StyleSheet.create({
   segThumb: { position: 'absolute', top: 4, left: 4, bottom: 4, borderRadius: 11 },
   segBtn: { flex: 1, alignItems: 'center', paddingVertical: 9 },
   segText: { fontSize: 14, fontWeight: '800' },
-  nav: { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  navBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1 },
-  navCol: { flex: 1 },
-  navCaption: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
-  navText: { fontSize: 16, fontWeight: '800', marginTop: 1 },
-  navMiles: { fontSize: 12, fontWeight: '600', marginTop: 1 },
+  navPills: { flexDirection: 'row', gap: 6, flexShrink: 1 },
+  navPill: { flexDirection: 'row', alignItems: 'center', gap: 2, height: 32, paddingHorizontal: 8, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.18)', flexShrink: 1 },
+  navPillText: { color: '#ffffff', fontSize: 13, fontWeight: '700', flexShrink: 1, maxWidth: 96 },
 });

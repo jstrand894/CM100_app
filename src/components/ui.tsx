@@ -43,14 +43,17 @@ export function ScreenHeader({ title, subtitle }: { title: string; subtitle?: st
 }
 
 // Blue header for pushed (non-tab) screens, with a back button and optional right-hand content.
-export function DetailHeader({ title, subtitle, children }: { title: string; subtitle?: string; children?: ReactNode }) {
+export function DetailHeader({ title, subtitle, children, right, compact }: { title: string; subtitle?: string; children?: ReactNode; right?: ReactNode; compact?: boolean }) {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
-      <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} hitSlop={12} style={styles.back} accessibilityLabel="Go back">
-        <Ionicons name="chevron-back" size={22} color="#ffffff" />
-        <Text style={styles.backText}>Back</Text>
-      </Pressable>
+    <View style={[styles.header, { paddingTop: insets.top + 6 }, compact && { paddingBottom: 14 }]}>
+      <View style={styles.backRow}>
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} hitSlop={12} style={styles.back} accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={22} color="#ffffff" />
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
+        {right}
+      </View>
       <Text style={styles.headerTitle}>{title}</Text>
       {subtitle ? <Text style={styles.headerSub}>{subtitle}</Text> : null}
       {children}
@@ -170,7 +173,8 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
   badgeText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
   header: { backgroundColor: BRAND_BLUE, paddingHorizontal: 20, paddingBottom: 22, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
-  back: { flexDirection: 'row', alignItems: 'center', marginLeft: -6, marginBottom: 6, alignSelf: 'flex-start' },
+  backRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 },
+  back: { flexDirection: 'row', alignItems: 'center', marginLeft: -6 },
   backText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
   headerTitle: { color: '#ffffff', fontSize: 28, fontWeight: '800' },
   headerSub: { color: '#bcd6e6', fontSize: 14, fontWeight: '600', marginTop: 4 },

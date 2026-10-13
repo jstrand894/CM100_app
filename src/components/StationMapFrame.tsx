@@ -17,7 +17,7 @@ export function StationMapFrame({ route, render }: { route: StationRoute; render
       {prev && (
         <View style={styles.legendItem}>
           <View style={[styles.swatch, { backgroundColor: t.primary }]} />
-          <Text style={[styles.legendText, { color: t.muted }]} numberOfLines={1}>{`From ${prev.name.replace(/^Start: /, '')}`}</Text>
+          <Text style={[styles.legendText, { color: t.muted }]} numberOfLines={1}>{`From ${prev.name.replace(/^Start: .*$/, 'Start')}`}</Text>
         </View>
       )}
       {next && (
@@ -33,7 +33,7 @@ export function StationMapFrame({ route, render }: { route: StationRoute; render
     <>
       <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
         <View style={styles.head}>
-          <Text style={[styles.title, { color: t.text }]}>Route around {station.name.replace(/^(Start|Finish): /, '')}</Text>
+          <Text style={[styles.title, { color: t.text }]}>Route around {station.kind === 'start' ? 'the start' : station.name.replace(/^Finish: /, '')}</Text>
         </View>
         <View style={styles.mapBox}>
           {render(false)}

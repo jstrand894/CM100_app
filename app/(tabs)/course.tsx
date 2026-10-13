@@ -76,7 +76,7 @@ function CourseDetails({ activeId, onPick }: { activeId: string; onPick: (id: st
       <View style={[styles.block, { backgroundColor: RAISED }]}>
         <Text style={styles.blockKicker}>{prev ? 'SELECTED SECTION' : 'START'}</Text>
         <Text style={styles.blockTitle}>
-          {prev ? `${prev.name.replace(/^Start: /, '')} → ${st.name.replace(/^Finish: /, '')}` : st.name}
+          {prev ? `${prev.name.replace(/^Start: .*$/, 'Start')} → ${st.name.replace(/^Finish: /, '')}` : st.name}
         </Text>
         <Text style={styles.blockBody}>
           {prev
