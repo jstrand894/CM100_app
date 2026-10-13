@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Href, router, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -211,17 +210,6 @@ export default function HomeScreen() {
   const newsUnread = notices.items.filter((n) => n.id.startsWith(NEWS_PREFIX) && !notices.isRead(n.id)).length;
   const prep = useOfflinePrep();
   const [prepOpen, setPrepOpen] = useState(false);
-  // Remember whether the countdown was left open; it starts collapsed so it does not dominate the screen.
-  const [countOpen, setCountOpen] = useState(false);
-  useEffect(() => {
-    AsyncStorage.getItem('cm100.countdownOpen')
-      .then((v) => setCountOpen(v === '1'))
-      .catch(() => {});
-  }, []);
-  const toggleCount = () => {
-    setCountOpen(!countOpen);
-    AsyncStorage.setItem('cm100.countdownOpen', countOpen ? '0' : '1').catch(() => {});
-  };
   const latest = news.posts[0];
   // Pull down to check for new news. Keep the spinner up briefly even when the check is instant.
   const [pulling, setPulling] = useState(false);
@@ -234,7 +222,7 @@ export default function HomeScreen() {
   // The gear sits over the fixed hero, so it only works while the hero is showing.
   const [gearOn, setGearOn] = useState(true);
 
-  const heroHeight = insets.top + 238;
+  const heroHeight = insets.top + 238 + 84;
   // Hero stays fixed; only stretches slightly when pulling down past the top.
   const heroScale = scrollY.interpolate({ inputRange: [-200, 0], outputRange: [1.2, 1], extrapolate: 'clamp' });
 
@@ -261,6 +249,24 @@ export default function HomeScreen() {
           <Ionicons name="calendar-outline" size={15} color="#ffffff" />
           <Text style={styles.heroDate}>{RACE.dateLabel}</Text>
         </View>
+        {c.kind === 'units' ? (
+          <View style={styles.heroCount} accessibilityLabel={`${c.units.map((u) => `${u.value} ${u.label}`).join(', ')} ${c.caption}`}>
+            <View style={styles.heroUnits}>
+              {c.units.map((u) => (
+                <View key={u.label} style={styles.heroUnit}>
+                  <Text style={[styles.heroUnitValue, { color: t.accent }]}>{u.value}</Text>
+                  <Text style={styles.heroUnitLabel}>{u.label}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={styles.heroCaption}>{c.footer ?? c.caption}</Text>
+          </View>
+        ) : (
+          <View style={styles.heroCount}>
+            <Text style={[styles.heroUnitValue, { color: t.accent, fontSize: 30 }]}>{c.big}</Text>
+            <Text style={styles.heroCaption}>{c.small}</Text>
+          </View>
+        )}
       </Animated.View>
 
       <Animated.ScrollView
@@ -300,48 +306,12 @@ export default function HomeScreen() {
             </Collapsible>
           </View>
         )}
-        <View style={[styles.countdown, { backgroundColor: t.card, borderColor: t.border }]}>
-          <Pressable
-            onPress={toggleCount}
-            accessibilityRole="button"
-            accessibilityState={{ expanded: countOpen }}
-            accessibilityLabel="Countdown"
-            style={styles.countBar}
-          >
-            <Ionicons name="timer-outline" size={20} color={t.accent} />
-            <Text style={[styles.countSummary, { color: t.accent }]} numberOfLines={1}>
-              COUNTDOWN
-            </Text>
-            <Ionicons name={countOpen ? 'chevron-up' : 'chevron-down'} size={18} color={t.muted} />
+        {lottery && (
+          <Pressable onPress={() => router.push('/lottery')} style={[styles.lotteryPill, styles.lotteryRow, { backgroundColor: t.accentSoft }]} accessibilityRole="button">
+            <Ionicons name="ticket" size={14} color={t.accent} />
+            <Text style={[styles.lotteryText, { color: t.accent }]}>{lottery}</Text>
           </Pressable>
-          <Collapsible open={countOpen} style={{ alignItems: 'center', paddingBottom: 8 }}>
-              {c.kind === 'units' ? (
-                <>
-                  <View style={[styles.units, { marginTop: 8 }]}>
-                    {c.units.map((u, i) => (
-                      <View key={u.label} style={[styles.unit, i > 0 && { borderLeftWidth: 1, borderLeftColor: t.border }]}>
-                        <Text style={[styles.unitValue, { color: t.accent }]}>{u.value}</Text>
-                        <Text style={[styles.unitLabel, { color: t.muted }]}>{u.label}</Text>
-                      </View>
-                    ))}
-                  </View>
-                  <Text style={[styles.countSmall, { color: t.muted }]}>{c.caption}</Text>
-                  {c.footer && <Text style={[styles.countFooter, { color: t.text }]}>{c.footer}</Text>}
-                </>
-              ) : (
-                <>
-                  <Text style={[styles.countBig, { color: t.accent }]}>{c.big}</Text>
-                  <Text style={[styles.countSmall, { color: t.muted }]}>{c.small}</Text>
-                </>
-              )}
-          </Collapsible>
-          {lottery && (
-            <Pressable onPress={() => router.push('/lottery')} style={[styles.lotteryPill, { backgroundColor: t.accentSoft }]}>
-              <Ionicons name="ticket" size={14} color={t.accent} />
-              <Text style={[styles.lotteryText, { color: t.accent }]}>{lottery}</Text>
-            </Pressable>
-          )}
-        </View>
+        )}
 
         <RunnersSection />
 
@@ -512,18 +482,15 @@ const styles = StyleSheet.create({
     backgroundColor: BRAND_BLUE,
   },
   heroDate: { color: '#ffffff', fontSize: 14, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase' },
-  countdown: { borderRadius: 18, borderWidth: 1, paddingVertical: 10, alignItems: 'center' },
-  units: { flexDirection: 'row', alignSelf: 'stretch', paddingHorizontal: 10, marginBottom: 8 },
-  unit: { flex: 1, alignItems: 'center' },
-  unitValue: { fontSize: 30, fontWeight: '900', lineHeight: 40, fontVariant: ['tabular-nums'] },
-  unitLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase' },
-  countBar: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'stretch', paddingHorizontal: 16, minHeight: 28 },
-  countSummary: { flex: 1, fontSize: 15, fontWeight: '800' },
-  countBig: { fontSize: 40, fontWeight: '900', lineHeight: 46 },
+  heroCount: { alignItems: 'center', marginTop: 12 },
+  heroUnits: { flexDirection: 'row', gap: 6 },
+  heroUnit: { width: 62, alignItems: 'center' },
+  heroUnitValue: { fontSize: 28, fontWeight: '900', lineHeight: 32, fontVariant: ['tabular-nums'] },
+  heroUnitLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase', color: '#6b6358' },
+  heroCaption: { fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase', color: '#6b6358', marginTop: 4 },
+  lotteryRow: { alignSelf: 'center', marginTop: 0, marginBottom: 14 },
   lotteryPill: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14 },
   lotteryText: { fontSize: 13, fontWeight: '800' },
-  countFooter: { fontSize: 14, fontWeight: '800', marginTop: 6 },
-  countSmall: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase' },
   news: { borderRadius: 18, padding: 14, marginTop: 14 },
   newsTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   newsIcon: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
