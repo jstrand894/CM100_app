@@ -331,13 +331,12 @@ export default function CourseScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]} {...pan.panHandlers}>
-        <View style={styles.titleRow}>
-          <View style={{ flex: 1 }} />
-          <Pressable onPress={toggleCollapsed} hitSlop={10} style={styles.collapseBtn} accessibilityRole="button" accessibilityLabel={collapsed ? 'Show elevation profile' : 'Hide elevation profile'}>
-            <Ionicons name={collapsed ? 'chevron-down' : 'chevron-up'} size={18} color="#ffffff" />
-          </Pressable>
-        </View>
+      <View style={[styles.header, { paddingTop: insets.top + 6 }]} {...pan.panHandlers}>
+        {/* The button floats over the chart's corner; when the chart is hidden, a spacer keeps room for it. */}
+        <Animated.View style={{ height: chartShown.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }} />
+        <Pressable onPress={toggleCollapsed} hitSlop={10} style={[styles.collapseBtn, styles.collapseFloat, { top: insets.top + 6 }]} accessibilityRole="button" accessibilityLabel={collapsed ? 'Show elevation profile' : 'Hide elevation profile'}>
+          <Ionicons name={collapsed ? 'chevron-down' : 'chevron-up'} size={18} color="#ffffff" />
+        </Pressable>
         <Animated.View style={{ height: chartShown.interpolate({ inputRange: [0, 1], outputRange: [0, 195] }), opacity: chartShown, overflow: 'hidden' }}>
           <View style={styles.chart}>
             <ZoomChart activeId={activeId} onSelect={jumpTo} center={center} progress={progress} onPanStart={onPanStart} onPanMove={onPanMove} onPanEnd={onPanEnd} />
@@ -456,6 +455,7 @@ const styles = StyleSheet.create({
   header: { backgroundColor: BRAND_BLUE, paddingHorizontal: 12, paddingBottom: 10, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   title: { color: '#ffffff', fontSize: 26, fontWeight: '800', marginLeft: 8 },
   titleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  collapseFloat: { position: 'absolute', right: 12, zIndex: 3 },
   collapseBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', marginRight: 4 },
   sub: { color: '#bcd6e6', fontSize: 13, fontWeight: '600', marginLeft: 8, marginTop: 2, marginBottom: 10 },
   chart: { marginHorizontal: -4 },

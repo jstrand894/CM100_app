@@ -1,3 +1,4 @@
+import { StationMap } from '../../src/components/StationMap';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
@@ -200,6 +201,8 @@ export default function AidStationDetail() {
       <Animated.View style={{ flex: 1, transform: [{ translateX: slide }] }}>
       <ScrollView ref={scroller} contentContainerStyle={styles.content}>
         <Text style={[styles.summary, { color: t.text }]}>{u.text(station.summary)}</Text>
+
+        <StationMap id={station.id} />
 
         {station.driveCoordinate ? (
           <Pressable onPress={openMaps} style={({ pressed }) => [styles.cta, { backgroundColor: t.primary }, pressed && { opacity: 0.85 }]}>
