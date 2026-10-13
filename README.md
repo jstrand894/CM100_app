@@ -9,10 +9,10 @@ keep working with little or no cell service, because most of the course has none
   &nbsp;
   <img src="docs/screenshots/course.png" width="260" alt="Course tab with the elevation profile and aid station list" />
   &nbsp;
-  <img src="docs/screenshots/planner.png" width="260" alt="Pace planner in race day mode with the next crew stop card expanded" />
+  <img src="docs/screenshots/planner.png" width="260" alt="Pace tab in race day mode with the next crew stop card expanded" />
 </p>
 
-<p align="center"><sub>Home, Course and Pace planner. The news post on Home is sample content.</sub></p>
+<p align="center"><sub>Home, Course and Pace. The news post on Home is sample content.</sub></p>
 
 > **Unofficial.** Course, aid station and rules information comes from the race's public website and its published
 > crew materials. Details change from year to year, so always confirm with the race.
@@ -24,11 +24,11 @@ keep working with little or no cell service, because most of the course has none
 | **Home** | Live countdown to the start, a race weekend card once race week begins (next event, shortcuts), the latest post from the race director, typical or forecast weather, and quick links to the schedule, gear checklists, crew and pacer rules, emergency contacts, food and lodging, and the lottery. |
 | **Course** | An interactive elevation profile you can swipe along, with every aid station, section distance, climb and descent, crew and pacer access, drop bags and cutoffs. Tap a station for the full details. |
 | **Map** | The course line and aid stations on a map (Terrain, Hybrid or Satellite), your own location, GPX download, and a link to live runner tracking. |
-| **Planner** | Plan a finish time and see when your runner reaches each station, then track them on race day. See below. |
+| **Pace** | Plan a finish time and see when your runner reaches each station, then track them on race day. See below. |
 
-### Pace planner
+### Pace
 
-The planner has two modes:
+The Pace tab has two modes:
 
 - **Plan ahead.** Choose a goal finish time and see an estimated arrival time at every aid station, how far ahead of or
   behind each cutoff that puts you, and when crew has to leave the previous crew stop to meet the runner.
@@ -49,7 +49,7 @@ These are estimates, not predictions. Weather, conditions and aid station stops 
 
 ### Works offline
 
-- The countdown, schedule, course, gear lists, aid station details and the planner need no signal.
+- The countdown, schedule, course, gear lists, aid station details and the Pace tab need no signal.
 - News and weather are saved on the phone and show when they were last updated.
 - The Map's background tiles need signal. The course line, aid stations and your GPS position still draw without it.
 - A banner explains what still works whenever the phone has no connection.
@@ -100,7 +100,7 @@ Differences from the mobile app:
 
 - **Map:** the interactive map is native-only. On the web the Map tab draws the course and aid stations itself and links
   each station out to a maps app.
-- **Time entry** in the planner uses the browser's own time field, and confirmations use the browser's dialogs.
+- **Time entry** on the Pace tab uses the browser's own time field, and confirmations use the browser's dialogs.
 - **Appearance** follows the browser or system theme (the Light/Dark setting is mobile only).
 - Offline use is limited to what the browser has cached. For race weekend, the native app is the better choice.
 

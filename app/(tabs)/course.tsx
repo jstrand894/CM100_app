@@ -441,7 +441,7 @@ export default function CourseScreen() {
                     <Ionicons name="timer" size={20} color="#ffffff" />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.ctaTitle, { color: t.text }]}>Pace planner</Text>
+                    <Text style={[styles.ctaTitle, { color: t.text }]}>Pace & times</Text>
                     <Text style={[styles.ctaSub, { color: t.muted }]}>When will your runner reach each station?</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={t.muted} />

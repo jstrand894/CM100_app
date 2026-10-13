@@ -127,7 +127,7 @@ export function RunnersSection() {
               key={r.id}
               onPress={() => open(r.id)}
               accessibilityRole="button"
-              accessibilityLabel={`${r.name}. Open planner`}
+              accessibilityLabel={`${r.name}. Open Pace`}
               style={({ pressed }) => [styles.row, { backgroundColor: t.card, borderColor: t.border }, pressed && { opacity: 0.85 }]}
             >
               <View style={[styles.avatar, { backgroundColor: tint(t.primary, 0.14) }]}>

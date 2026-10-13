@@ -150,7 +150,7 @@ function HowItWorks({ visible, onClose }: { visible: boolean; onClose: () => voi
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: t.bg, padding: 20, paddingBottom: insets.bottom + 20 }}>
         <View style={styles.modalHead}>
-          <Text style={[styles.modalTitle, { color: t.text }]}>How the planner works</Text>
+          <Text style={[styles.modalTitle, { color: t.text }]}>How Pace works</Text>
           <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="Close">
             <Ionicons name="close-circle" size={30} color={t.muted} />
           </Pressable>
@@ -509,8 +509,8 @@ export default function PlannerScreen() {
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <View style={styles.headerRow}>
-          <Text style={styles.headerTitle}>Pace planner</Text>
-          <Pressable onPress={() => setInfo(true)} hitSlop={12} accessibilityLabel="How the planner works">
+          <Text style={styles.headerTitle}>Pace & times</Text>
+          <Pressable onPress={() => setInfo(true)} hitSlop={12} accessibilityLabel="How Pace works">
             <Ionicons name="information-circle-outline" size={24} color="#ffffff" />
           </Pressable>
         </View>

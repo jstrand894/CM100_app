@@ -16,7 +16,7 @@ type Props = {
   onRemove: (id: string) => void;
 };
 
-/** Chips for choosing which runner the planner is about, plus a sheet to add, rename or remove one. */
+/** Chips for choosing which runner the Pace tab is about, plus a sheet to add, rename or remove one. */
 export function RunnerBar({ runners, activeId, onPick, onAdd, onUpdate, onRemove }: Props) {
   const t = useTheme();
   const [editing, setEditing] = useState<Runner | 'new' | null>(null);

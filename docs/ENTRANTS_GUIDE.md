@@ -1,6 +1,6 @@
 # Loading the runner list
 
-The "Add runner" screen in the planner searches a start list by name or bib number. The list lives in
+The "Add runner" screen on the Pace tab searches a start list by name or bib number. The list lives in
 `public/entrants.json` and is published with the web app at
 `https://jstrand894.github.io/CM100_app/entrants.json`. Phones fetch it on launch and keep a saved copy for offline.
 

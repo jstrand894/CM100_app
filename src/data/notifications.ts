@@ -26,9 +26,9 @@ export const WELCOME: Notice = {
   date: '2026-01-01',
   title: 'Welcome to the CM100 Companion',
   body:
-    'Course, aid stations, pace planner, gear list, weather and race news, all in one place.\n\n' +
+    'Course, aid stations, pace plan, gear list, weather and race news, all in one place.\n\n' +
     'Before you head out of signal: tap "Get ready for offline" on the Home tab while you have service. ' +
-    'It saves the latest news, weather and announcements to your phone. The course, schedule, gear list and planner always work offline.',
+    'It saves the latest news, weather and announcements to your phone. The course, schedule, gear list and Pace tab always work offline.',
   link: '',
   urgent: false,
 };

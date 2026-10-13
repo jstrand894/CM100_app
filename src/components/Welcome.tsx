@@ -16,7 +16,7 @@ const SEEN_KEY = 'cm100.welcome.seen';
 const STEPS: { icon: keyof typeof Ionicons.glyphMap; title: string; body: string }[] = [
   { icon: 'home-outline', title: 'Home', body: 'Countdown, race-weekend schedule, weather and news from the race director.' },
   { icon: 'trail-sign-outline', title: 'Course and map', body: 'Aid stations, cutoffs, the elevation profile and your position on the trail.' },
-  { icon: 'stopwatch-outline', title: 'Planner', body: 'Set a goal time for a pace plan, and log your splits live on race day.' },
+  { icon: 'stopwatch-outline', title: 'Pace', body: 'Set a goal time for a pace plan, and check in at each station on race day.' },
   { icon: 'notifications-outline', title: 'Notifications', body: 'The bell on Home holds race announcements. A red dot means there is something new.' },
 ];
 
@@ -90,7 +90,7 @@ export function WelcomeModal({ prep }: { prep: Prep }) {
                 style={[styles.input, { color: t.text, borderColor: t.border, backgroundColor: t.card }]}
               />
             )}
-            <Text style={[styles.stepBody, { color: t.muted }]}>You can change this later in Settings, and add more runners in the Planner.</Text>
+            <Text style={[styles.stepBody, { color: t.muted }]}>You can change this later in Settings, and add more runners on the Pace tab.</Text>
           </View>
           {STEPS.map((s) => (
             <View key={s.title} style={styles.step}>
@@ -109,7 +109,7 @@ export function WelcomeModal({ prep }: { prep: Prep }) {
               <Text style={[styles.stepTitle, { color: t.text }]}>Download for offline</Text>
             </View>
             <Text style={[styles.stepBody, { color: t.muted }]}>
-              The course, schedule, gear list and planner are built in. News, weather and announcements need to be saved once while you have service.
+              The course, schedule, gear list and Pace tab are built in. News, weather and announcements need to be saved once while you have service.
             </Text>
             <OfflineAction prep={prep} />
           </View>

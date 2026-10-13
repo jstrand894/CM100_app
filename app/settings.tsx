@@ -165,7 +165,7 @@ export default function SettingsScreen() {
           <Text style={[styles.hint, { color: t.muted }]}>Runners see a "Me" section on Home. Crew see "Your runners".</Text>
         </Card>
 
-        <SectionTitle>Pace planner</SectionTitle>
+        <SectionTitle>Pace</SectionTitle>
         <Card style={styles.list}>
           <ListRow
             icon="timer-outline"
@@ -174,7 +174,7 @@ export default function SettingsScreen() {
             danger
             onPress={
               counts.logs
-                ? () => confirm('Clear all race day times?', 'This removes every time you have logged for every runner in the planner.', () => allRunnerKeys('logs'))
+                ? () => confirm('Clear all race day times?', 'This removes every time you have logged for every runner on the Pace tab.', () => allRunnerKeys('logs'))
                 : undefined
             }
           />
@@ -184,7 +184,7 @@ export default function SettingsScreen() {
             sub="Back to 30 hours"
             danger
             last
-            onPress={() => confirm('Reset your goal time?', 'Every runner in the planner goes back to a 30 hour finish.', () => allRunnerKeys('goal'), 'Reset')}
+            onPress={() => confirm('Reset your goal time?', 'Every runner on the Pace tab goes back to a 30 hour finish.', () => allRunnerKeys('goal'), 'Reset')}
           />
         </Card>
 

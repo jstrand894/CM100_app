@@ -27,7 +27,7 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: 'Home', headerShown: false, tabBarIcon: icon('home') }} />
       <Tabs.Screen name="course" options={{ title: 'Course', headerShown: false, tabBarIcon: mciIcon('chart-areaspline') }} />
       <Tabs.Screen name="map" options={{ title: 'Map', headerShown: false, tabBarIcon: icon('map') }} />
-      <Tabs.Screen name="planner" options={{ title: 'Planner', headerShown: false, tabBarIcon: icon('timer') }} />
+      <Tabs.Screen name="planner" options={{ title: 'Pace', headerShown: false, tabBarIcon: mciIcon('run') }} />
     </Tabs>
   );
 }

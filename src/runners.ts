@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useState } from 'react';
 
-// The planner can follow more than one runner. The first runner keeps the original storage keys, so
+// The Pace tab can follow more than one runner. The first runner keeps the original storage keys, so
 // anyone who already logged times keeps them; extra runners get keys with their id on the end.
 export interface Runner {
   id: string;
