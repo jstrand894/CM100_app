@@ -4,7 +4,7 @@ import { ReactNode, memo, useCallback, useEffect, useMemo, useRef, useState } fr
 import { Animated, Easing, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ElevationChart } from '../../src/components/ElevationChart';
-import { tint } from '../../src/components/ui';
+import { Collapsible, tint } from '../../src/components/ui';
 import { AID_STATIONS, AidStation, CREW_LABEL, CrewAccess } from '../../src/data/aidStations';
 import { COURSE_STATS, elevationAtMile } from '../../src/data/elevationUtil';
 import { BRAND_BLUE, Theme, useTheme } from '../../src/theme';
@@ -379,11 +379,18 @@ export default function CourseScreen() {
             );
           })}
         </View>
-        {list.map((item, idx) => {
+        {AID_STATIONS.map((item, idx) => {
           const kc = t.primary;
-          const sel = !collapsed && item.id === activeId;
+          const vis = list.includes(item);
+          const sel = vis && !collapsed && item.id === activeId;
+          // The connector leads to the next station that is showing, adding up any stretches in between.
+          const nxt = AID_STATIONS.slice(idx + 1).find((x) => list.includes(x)) ?? AID_STATIONS[idx + 1];
+          const between = nxt ? AID_STATIONS.slice(idx + 1, AID_STATIONS.indexOf(nxt) + 1) : [];
+          const sum = (k: 'gainFt' | 'lossFt') => (between.every((x) => x[k] == null) ? null : between.reduce((n, x) => n + (x[k] ?? 0), 0));
+          const legOpen = vis && AID_STATIONS.slice(idx + 1).some((x) => list.includes(x));
           return (
             <View key={item.id} onLayout={onRowLayout(item.id)}>
+              <Collapsible open={vis}>
               <Grow active={sel}>
               <Link href={{ pathname: '/aid/[id]', params: { id: item.id } }} asChild>
                 <Pressable
@@ -419,14 +426,12 @@ export default function CourseScreen() {
                 </Pressable>
               </Link>
               </Grow>
-              {idx < list.length - 1 && (() => {
-                const nxt = list[idx + 1];
-                const a = AID_STATIONS.indexOf(item);
-                const b = AID_STATIONS.indexOf(nxt);
-                const between = AID_STATIONS.slice(a + 1, b + 1);
-                const sum = (k: 'gainFt' | 'lossFt') => (between.every((x) => x[k] == null) ? null : between.reduce((n, x) => n + (x[k] ?? 0), 0));
-                return <Leg from={item} next={nxt} gain={sum('gainFt')} loss={sum('lossFt')} />;
-              })()}
+              </Collapsible>
+              {nxt && (
+                <Collapsible open={legOpen}>
+                  <Leg from={item} next={nxt} gain={sum('gainFt')} loss={sum('lossFt')} />
+                </Collapsible>
+              )}
               {item.kind === 'finish' && (
                 <Pressable
                   onPress={() => router.push('/planner')}

@@ -186,7 +186,14 @@ const styles = StyleSheet.create({
 export function Collapsible({ open, children, style }: { open: boolean; children: ReactNode; style?: ViewStyle }) {
   const [h, setH] = useState(0);
   const anim = useRef(new Animated.Value(0)).current;
+  const measured = useRef(false);
   useEffect(() => {
+    // The first measurement snaps into place, so content that starts open does not animate in on screen load.
+    if (!measured.current && h > 0) {
+      measured.current = true;
+      anim.setValue(open ? h : 0);
+      return;
+    }
     Animated.timing(anim, { toValue: open ? h : 0, duration: 240, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
   }, [open, h, anim]);
   return (
