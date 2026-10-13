@@ -73,6 +73,7 @@ export function RunnersSection() {
   const t = useTheme();
   const rs = useRunners();
   const [sums, setSums] = useState<Record<string, Summary>>({});
+  const [changing, setChanging] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -101,7 +102,23 @@ export function RunnersSection() {
 
   return (
     <View style={{ marginTop: 14 }}>
-      <Text style={[styles.kicker, { color: t.muted, marginBottom: 8 }]}>{rs.role === 'runner' ? 'ME' : 'YOUR RUNNERS'}</Text>
+      <View style={styles.head}>
+        <Text style={[styles.kicker, { color: t.muted }]}>{rs.role === 'runner' ? 'ME' : 'YOUR RUNNERS'}</Text>
+        <Pressable onPress={() => setChanging((c) => !c)} hitSlop={10} accessibilityRole="button" accessibilityLabel="Change between runner and crew">
+          <Text style={[styles.change, { color: t.primary }]}>{changing ? 'Done' : 'Change'}</Text>
+        </Pressable>
+      </View>
+      {changing && (
+        <View style={{ marginBottom: 10 }}>
+          <RolePicker
+            role={rs.role}
+            onPick={(r) => {
+              rs.setRole(r);
+              setChanging(false);
+            }}
+          />
+        </View>
+      )}
       <View style={{ gap: 10 }}>
         {list.map((r) => {
           const s = sums[r.id];
@@ -147,6 +164,8 @@ export function RunnersSection() {
 const styles = StyleSheet.create({
   card: { borderRadius: 18, borderWidth: 1, padding: 14, marginTop: 14, gap: 10 },
   kicker: { fontSize: 12, fontWeight: '800', letterSpacing: 0.6 },
+  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  change: { fontSize: 14, fontWeight: '800' },
   pickRow: { flexDirection: 'row', gap: 10 },
   pick: { flex: 1, borderRadius: 14, padding: 12, gap: 2, alignItems: 'flex-start' },
   pickLabel: { fontSize: 16, fontWeight: '800', marginTop: 4 },
