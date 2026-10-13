@@ -227,8 +227,6 @@ export default function AidStationDetail() {
           )}
         </View>
 
-        <Text style={[styles.summary, { color: t.text }]}>{u.text(station.summary)}</Text>
-
         <StationMap id={station.id} />
 
         {station.driveCoordinate ? (
@@ -376,7 +374,6 @@ const styles = StyleSheet.create({
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
   pillText: { fontSize: 13, fontWeight: '800' },
-  summary: { fontSize: 15, lineHeight: 22, marginBottom: 14 },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16 },
   ctaTitle: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
   ctaSub: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 1 },
