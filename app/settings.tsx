@@ -2,16 +2,20 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { useEffect, useState } from 'react';
-import { DevSettings, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import { DevSettings, Linking, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { Alert } from '../src/alert';
 import { Card, DetailHeader, ListRow, SectionTitle } from '../src/components/ui';
 import { agoLabel } from '../src/data/news';
 import { RolePicker } from '../src/components/RunnersSection';
+import { formatBytes, getStorageUsage, StorageGroup } from '../src/diagnostics';
 import { allRunnerKeys, useRunners } from '../src/runners';
 import { RACE } from '../src/data/race';
 import {
+  APP_URL,
   applyTheme,
   CACHE_KEYS,
+  FEEDBACK_EMAIL,
   GEAR_KEYS,
   GOAL_KEYS,
   loadThemePref,
@@ -41,7 +45,10 @@ export default function SettingsScreen() {
   const [counts, setCounts] = useState({ logs: 0, gear: 0 });
   const [cacheAt, setCacheAt] = useState<{ news: number | null; weather: number | null }>({ news: null, weather: null });
 
+  const [usage, setUsage] = useState<{ total: number; groups: StorageGroup[] } | null>(null);
+
   const refresh = async () => {
+    getStorageUsage().then(setUsage).catch(() => {});
     try {
       const [logs, gear, news, weather] = await Promise.all(
         ['cm100.liveLogs', 'cm100.gear.v1', 'cm100.news.cache', 'cm100.weather.v1'].map((k) => AsyncStorage.getItem(k)),
@@ -85,6 +92,29 @@ export default function SettingsScreen() {
     if (Platform.OS === 'web') window.location.reload();
     else if (__DEV__) DevSettings.reload();
     else Alert.alert('Reset done', 'Close the app completely and open it again to start fresh.');
+  };
+
+  const version = Constants.expoConfig?.version ?? '1.0.0';
+  const device = Platform.OS === 'web' ? 'web' : `${Platform.OS} ${Platform.Version}`;
+  const sendFeedback = async () => {
+    const subject = encodeURIComponent('CM100 Companion feedback');
+    const body = encodeURIComponent(`\n\n---\nApp version ${version} · ${device}`);
+    try {
+      await Linking.openURL(`mailto:${FEEDBACK_EMAIL}?subject=${subject}&body=${body}`);
+    } catch {
+      Alert.alert('Could not open email', FEEDBACK_EMAIL ? `Send your feedback to ${FEEDBACK_EMAIL}.` : 'No email app is set up on this device.');
+    }
+  };
+  const shareApp = async () => {
+    const message = `Check out the Crazy Mountain 100 Companion app: ${APP_URL}`;
+    try {
+      if (Platform.OS === 'web' && !(typeof navigator !== 'undefined' && 'share' in navigator)) {
+        await Clipboard.setStringAsync(APP_URL);
+        Alert.alert('Link copied', 'Paste it into a message to share the app.');
+      } else {
+        await Share.share({ message, url: APP_URL });
+      }
+    } catch {}
   };
 
   const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
@@ -201,6 +231,21 @@ export default function SettingsScreen() {
             last
             onPress={() => confirm('Clear saved news and weather?', 'You will need signal to see them again until they re-download.', CACHE_KEYS)}
           />
+        </Card>
+
+        <SectionTitle>Support</SectionTitle>
+        <Card style={styles.list}>
+          <ListRow icon="chatbubble-ellipses-outline" title="Send feedback" sub="Report a problem or suggest an idea" onPress={sendFeedback} />
+          <ListRow icon="share-outline" title="Share the app" sub="Send a link to a runner or crew member" last onPress={shareApp} />
+        </Card>
+
+        <SectionTitle>Diagnostics</SectionTitle>
+        <Card style={styles.list}>
+          <ListRow icon="server-outline" title="Storage used" sub={usage ? `${formatBytes(usage.total)} saved on this phone` : 'Calculating…'} />
+          {usage?.groups.map((g) => (
+            <ListRow key={g.label} icon="document-text-outline" title={g.label} sub={formatBytes(g.bytes)} />
+          ))}
+          <ListRow icon="information-circle-outline" title="App version" sub={`${version} · ${device}`} last />
         </Card>
 
         <SectionTitle>Start over</SectionTitle>

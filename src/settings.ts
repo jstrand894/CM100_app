@@ -21,3 +21,7 @@ export async function loadThemePref(): Promise<ThemePref> {
     return 'system';
   }
 }
+
+// Where the app lives for sharing, and where feedback goes. Leave FEEDBACK_EMAIL empty to let the sender pick a recipient.
+export const APP_URL = 'https://jstrand894.github.io/CM100_app/';
+export const FEEDBACK_EMAIL = '';
