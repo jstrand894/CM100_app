@@ -337,7 +337,9 @@ export default function AidStationDetail() {
             </View>
             <Animated.View style={{ opacity: textFade, transform: [{ translateX: textSlide }] }}>
             {trail && (
-              <Card style={{ gap: 12, marginTop: 12, marginBottom: 0 }}>
+              <>
+              <SectionTitle>Trail description</SectionTitle>
+              <Card style={{ gap: 12, marginBottom: 0 }}>
                 <Text style={[styles.noteText, { color: t.text }]}>{u.text(trail.text)}</Text>
                 {trail.warning && (
                   <View style={[styles.warn, { backgroundColor: tint('#e0a100', 0.14) }]}>
@@ -346,6 +348,7 @@ export default function AidStationDetail() {
                   </View>
                 )}
               </Card>
+              </>
             )}
             </Animated.View>
           </>
