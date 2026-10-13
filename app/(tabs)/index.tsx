@@ -19,6 +19,7 @@ import { clockDuration, CUTOFF_MS, nowMs, Phase, phaseAt, shortDuration, START_M
 import { BRAND_BLUE, useTheme } from '../../src/theme';
 import { useUnits } from '../../src/units';
 import { TAB_BAR_CLEARANCE } from '../../src/tabBar';
+import { TickerNumber } from '../../src/components/TickerNumber';
 
 const logo = require('../../assets/brand/cm100-logo-transparent.png');
 const HERO_BG = '#fbf7f0'; // warm cream, picks up the logo's illustrated feel
@@ -255,7 +256,7 @@ export default function HomeScreen() {
             <View style={styles.heroUnits}>
               {c.units.map((u) => (
                 <View key={u.label} style={styles.heroUnit}>
-                  <Text style={[styles.heroUnitValue, { color: t.accent }]}>{u.value}</Text>
+                  <TickerNumber value={u.value} style={[styles.heroUnitValue, { color: t.accent }]} />
                   <Text style={styles.heroUnitLabel}>{u.label}</Text>
                 </View>
               ))}
