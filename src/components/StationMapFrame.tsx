@@ -61,7 +61,7 @@ export function StationMapFrame({ route, render }: { route: StationRoute; render
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 18, borderWidth: 1, overflow: 'hidden' },
+  card: { borderRadius: 18, borderWidth: 1, overflow: 'hidden', marginTop: 14 },
   head: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 },
   title: { fontSize: 16, fontWeight: '800' },
   mapBox: { height: 230, backgroundColor: '#e9eef2' },
