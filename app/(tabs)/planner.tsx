@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import * as Location from 'expo-location';
 import { router, useFocusEffect } from 'expo-router';
 import { createElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, LayoutAnimation, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from 'react-native';
@@ -30,6 +31,15 @@ const MAX = 36 * 60;
 const PRESETS = [21, 24, 27, 28.5, 30, 32, 34, 36];
 const START_ABS = START_HOUR * 60; // minutes after Friday midnight at the gun
 const DAY = 1440;
+const NEAR_METERS = 800; // close enough to count as "at" a station; trail coordinates are approximate
+
+const metersBetween = (a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }) => {
+  const rad = Math.PI / 180;
+  const dLat = (b.latitude - a.latitude) * rad;
+  const dLon = (b.longitude - a.longitude) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.latitude * rad) * Math.cos(b.latitude * rad) * Math.sin(dLon / 2) ** 2;
+  return 2 * 6371000 * Math.asin(Math.sqrt(h));
+};
 
 const goalLabel = (min: number) => `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
 // Absolute minutes after Friday 12:00 AM -> label such as "Fri 10:45 AM"
@@ -301,6 +311,41 @@ export default function PlannerScreen() {
     const abs = START_ABS + Math.floor((nowMs() - START_MS) / 60000);
     setEntry(Math.min(Math.max(abs, START_ABS), 2 * DAY - 1));
   };
+  // Picks the station you are standing at, using the phone's location. One-shot, only when the button is tapped.
+  const [locating, setLocating] = useState(false);
+  const [locNote, setLocNote] = useState<string | null>(null);
+  const useLocation = async () => {
+    if (locating || saving) return;
+    setLocating(true);
+    setLocNote(null);
+    try {
+      const perm = await Location.requestForegroundPermissionsAsync();
+      if (!perm.granted) {
+        setLocNote('Location is off for this app. Turn it on in your phone settings to use this.');
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const here = pos.coords;
+      let best: { id: string; name: string; m: number } | null = null;
+      for (const st of loggable) {
+        for (const c of [st.driveCoordinate, st.courseCoordinate]) {
+          if (!c) continue;
+          const m = metersBetween(here, c);
+          if (!best || m < best.m) best = { id: st.id, name: st.name, m };
+        }
+      }
+      if (best && best.m <= NEAR_METERS) {
+        choose(best.id);
+        setLocNote(`You are at ${shortName(best.name)}.`);
+      } else if (best) {
+        setLocNote(`Not near an aid station. Closest is ${shortName(best.name)}, ${u.dist(best.m / 1609.34)} away.`);
+      }
+    } catch {
+      setLocNote('Could not get your location. Try again with a clearer view of the sky.');
+    } finally {
+      setLocating(false);
+    }
+  };
   // Saving shows a check mark pop, holds a moment, then slides on to the next station.
   const checkScale = useRef(new Animated.Value(0)).current;
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -571,6 +616,11 @@ export default function PlannerScreen() {
               <TimeField minutes={entryAbs % DAY} onChange={setTimeOfDay} />
             </View>
 
+            <Pressable onPress={useLocation} disabled={locating} style={[styles.bump, { backgroundColor: t.primarySoft, opacity: locating ? 0.6 : 1, marginTop: 10, flexDirection: 'row', gap: 8 }]} accessibilityRole="button" accessibilityLabel="Pick the aid station nearest to my location">
+              <Ionicons name="locate" size={18} color={t.primary} />
+              <Text style={[styles.bumpText, { color: t.primary }]}>{locating ? 'Finding you…' : 'Use my location for the station'}</Text>
+            </Pressable>
+            {locNote && <Text style={[styles.goalSub, { color: t.muted }]}>{locNote}</Text>}
             <Pressable onPress={useNow} disabled={!raceStarted} style={[styles.bump, { backgroundColor: t.primarySoft, opacity: raceStarted ? 1 : 0.5, marginTop: 12 }]}>
               <Text style={[styles.bumpText, { color: t.primary }]}>Use current time</Text>
             </Pressable>
