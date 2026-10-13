@@ -27,6 +27,8 @@ export default function RootLayout() {
           animation: 'slide_from_right',
           animationDuration: 300,
           fullScreenGestureEnabled: true,
+          // iOS 26 softly blurs scrolling content under the top edge; hide it so text stays crisp.
+          scrollEdgeEffects: { top: 'hidden', bottom: 'automatic', left: 'automatic', right: 'automatic' },
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
