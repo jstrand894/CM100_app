@@ -1,5 +1,7 @@
 # CM100 Companion
 
+**Web app: [jstrand894.github.io/CM100_app](https://jstrand894.github.io/CM100_app/)**
+
 CM100 Companion is an unofficial companion app for the [Crazy Mountain 100](https://www.crazymountainultra.com), a 100-mile point-to-point
 mountain ultramarathon from Wilsall to Lennep, Montana. It is built for runners, crew and pacers, and it is designed to
 keep working with little or no cell service, because most of the course has none.
