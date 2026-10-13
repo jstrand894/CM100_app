@@ -270,6 +270,7 @@ export default function AidStationDetail() {
               <Text style={styles.ctaTitle}>Directions in Maps</Text>
               <Text style={styles.ctaSub}>Needs signal. Download the area in Maps ahead of time.</Text>
             </View>
+            <Ionicons name="open-outline" size={18} color="#ffffff" />
           </Pressable>
         ) : (
           station.crewAccess !== 'no' && (
