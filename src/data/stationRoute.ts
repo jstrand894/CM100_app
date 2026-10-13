@@ -32,3 +32,23 @@ export function stationRoute(id: string): StationRoute | null {
   const stops = [prev, station, next].filter((s): s is AidStation => !!s).map((s) => s.courseCoordinate);
   return { prev, station, next, before, after, all: [...before, ...after, ...stops] };
 }
+
+/** Fits points into a W x H box (uniform scale, centred) and returns the projection plus its inverse. */
+export function fitProject(points: Pt[], W: number, H: number, pad: number) {
+  const lats = points.map((p) => p.latitude);
+  const lons = points.map((p) => p.longitude);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats), minLon = Math.min(...lons), maxLon = Math.max(...lons);
+  const lonScale = Math.cos((((minLat + maxLat) / 2) * Math.PI) / 180);
+  const w = Math.max((maxLon - minLon) * lonScale, 0.002);
+  const h = Math.max(maxLat - minLat, 0.002);
+  const scale = Math.min((W - pad * 2) / w, (H - pad * 2) / h);
+  const offX = (W - w * scale) / 2;
+  const offY = (H - h * scale) / 2;
+  return {
+    scale,
+    project: (lat: number, lon: number) => ({ x: offX + (lon - minLon) * lonScale * scale, y: offY + (maxLat - lat) * scale }),
+    unproject: (x: number, y: number) => ({ latitude: maxLat - (y - offY) / scale, longitude: minLon + (x - offX) / (lonScale * scale) }),
+  };
+}
+
+export const shortStationName = (name: string) => name.replace(/^(Start|Finish): /, '').replace(/ \((1st|2nd) visit\)/, '');

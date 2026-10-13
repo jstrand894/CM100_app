@@ -257,7 +257,7 @@ export default function AidStationDetail() {
           {station.kind === 'start' ? (
             <Fact half icon="time" label="Start time" value="Friday, 6:00 AM" />
           ) : (
-            <Fact half icon="time" label="Cutoff" value={cutoffHours != null ? clockLabel(cutoffHours) : 'No cutoff here'} />
+            <Fact half icon="time" label="Cutoff" value={cutoffHours != null ? clockLabel(cutoffHours) : '–'} />
           )}
           {!isCutoffOnly && <Fact half icon="bag-handle" label="Drop bags" value={station.dropBags ? 'Yes' : 'No'} />}
           {!isCutoffOnly && <Fact half icon="walk" label="Pacers" value={station.pacerAccess ? 'Allowed' : 'Not allowed'} />}
