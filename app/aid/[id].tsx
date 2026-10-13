@@ -265,7 +265,7 @@ export default function AidStationDetail() {
 
         {station.driveCoordinate ? (
           <Pressable onPress={openMaps} style={({ pressed }) => [styles.cta, { backgroundColor: t.primary }, pressed && { opacity: 0.85 }]}>
-            <Ionicons name="navigate" size={20} color="#ffffff" />
+            <Ionicons name="car" size={22} color="#ffffff" />
             <View style={{ flex: 1 }}>
               <Text style={styles.ctaTitle}>Directions in Maps</Text>
               <Text style={styles.ctaSub}>Needs signal. Download the area in Maps ahead of time.</Text>
