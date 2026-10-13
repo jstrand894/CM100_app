@@ -671,6 +671,10 @@ export default function PlannerScreen() {
               </Pressable>
             </View>
 
+            <Pressable onPress={() => router.push(`/aid/${sel}`)} hitSlop={8} style={styles.infoLink} accessibilityRole="button" accessibilityLabel={`Station info for ${shortName(selStation.name)}`}>
+              <Ionicons name="information-circle-outline" size={16} color={t.primary} />
+              <Text style={[styles.infoLinkText, { color: t.primary }]}>Station info and directions</Text>
+            </Pressable>
             <Pressable onPress={() => setEditTime((e) => !e)} disabled={saving} style={styles.timeChip} accessibilityRole="button" accessibilityLabel={`Time ${absLabel(entryAbs)}. Tap to change`}>
               <Text style={[styles.timeChipText, { color: t.text }]}>{absLabel(entryAbs)}</Text>
               <Ionicons name={editTime ? 'chevron-up' : 'create-outline'} size={18} color={t.primary} />
@@ -783,6 +787,9 @@ export default function PlannerScreen() {
                 <View style={{ flex: 1 }}>
                   <View style={styles.nameRow}>
                     <Text style={[styles.name, { color: t.text, flexShrink: 1 }]}>{s.name}</Text>
+                    <Pressable onPress={() => router.push(`/aid/${s.id}`)} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Station info for ${shortName(s.name)}`}>
+                      <Ionicons name="information-circle-outline" size={20} color={t.primary} />
+                    </Pressable>
                     {isLogged && (
                       <View style={[styles.loggedPill, { backgroundColor: t.green }]}>
                         <Ionicons name="checkmark-circle" size={16} color="#ffffff" />
@@ -865,6 +872,8 @@ const styles = StyleSheet.create({
   pinTitle: { fontSize: 16, fontWeight: '800', marginTop: 1 },
   pinBtn: { paddingHorizontal: 16, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   pinBtnText: { color: '#ffffff', fontSize: 15, fontWeight: '800' },
+  infoLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 10 },
+  infoLinkText: { fontSize: 14, fontWeight: '800' },
   timeChip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14, paddingVertical: 6 },
   timeChipText: { fontSize: 28, fontWeight: '900' },
   timeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 14 },
