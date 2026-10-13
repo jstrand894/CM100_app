@@ -17,7 +17,7 @@ const STEPS: { icon: keyof typeof Ionicons.glyphMap; title: string; body: string
   { icon: 'home-outline', title: 'Home', body: 'Countdown, race-weekend schedule, weather and news from the race director.' },
   { icon: 'trail-sign-outline', title: 'Course and map', body: 'Aid stations, cutoffs, the elevation profile and your position on the trail.' },
   { icon: 'stopwatch-outline', title: 'Pace', body: 'Set a goal time for a pace plan, and check in at each station on race day.' },
-  { icon: 'notifications-outline', title: 'Notifications', body: 'The bell on Home holds race announcements. A red dot means there is something new.' },
+  { icon: 'notifications-outline', title: 'Inbox', body: 'The bell tab holds race announcements and news. A red badge means there is something new.' },
 ];
 
 /** Status line and button for saving data offline. Used in the welcome sheet and the Home card. */

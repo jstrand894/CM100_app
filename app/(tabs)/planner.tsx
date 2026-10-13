@@ -25,6 +25,7 @@ import {
 import { nowMs, phaseAt, START_MS } from '../../src/data/weekend';
 import { BRAND_BLUE, useTheme } from '../../src/theme';
 import { useUnits } from '../../src/units';
+import { TAB_BAR_CLEARANCE } from '../../src/tabBar';
 
 const MIN = 16 * 60;
 const MAX = 36 * 60;
@@ -591,7 +592,7 @@ export default function PlannerScreen() {
       <ScrollView
         ref={scroller}
         style={{ flex: 1 }}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 40 + TAB_BAR_CLEARANCE }]}
         keyboardShouldPersistTaps="handled"
         scrollEventThrottle={32}
         onScroll={(e) => {

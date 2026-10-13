@@ -1,33 +1,35 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
-import { ColorValue } from 'react-native';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useNotifications } from '../../src/data/notifications';
 import { useTheme } from '../../src/theme';
 
-const icon = (name: keyof typeof Ionicons.glyphMap) =>
-  ({ color, size }: { color: ColorValue; size: number }) => <Ionicons name={name} size={size} color={color} />;
-
-const mciIcon = (name: keyof typeof MaterialCommunityIcons.glyphMap) =>
-  ({ color, size }: { color: ColorValue; size: number }) => <MaterialCommunityIcons name={name} size={size + 2} color={color} />;
-
+// The system tab bar: on iOS 26 and later it is the floating Liquid Glass bar with a bubble behind the selected tab.
+// The web build uses the JS tab bar in _layout.web.tsx.
 export default function TabLayout() {
   const t = useTheme();
+  const { unread } = useNotifications();
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: t.accent,
-        tabBarInactiveTintColor: t.muted,
-        tabBarStyle: { backgroundColor: t.card, borderTopColor: t.border },
-        headerStyle: { backgroundColor: t.bg },
-        headerTintColor: t.text,
-        headerShadowVisible: false,
-        animation: 'none',
-        sceneStyle: { backgroundColor: t.bg },
-      }}
-    >
-      <Tabs.Screen name="index" options={{ title: 'Home', headerShown: false, tabBarIcon: icon('home') }} />
-      <Tabs.Screen name="course" options={{ title: 'Course', headerShown: false, tabBarIcon: mciIcon('chart-areaspline') }} />
-      <Tabs.Screen name="map" options={{ title: 'Map', headerShown: false, tabBarIcon: icon('map') }} />
-      <Tabs.Screen name="planner" options={{ title: 'Pace', headerShown: false, tabBarIcon: mciIcon('run') }} />
-    </Tabs>
+    <NativeTabs tintColor={t.accent}>
+      <NativeTabs.Trigger name="index">
+        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="course">
+        <NativeTabs.Trigger.Label>Course</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="chart.xyaxis.line" md="show_chart" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="map">
+        <NativeTabs.Trigger.Label>Map</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'map', selected: 'map.fill' }} md="map" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="planner">
+        <NativeTabs.Trigger.Label>Pace</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="figure.run" md="directions_run" />
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="notifications">
+        <NativeTabs.Trigger.Label>Inbox</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'bell', selected: 'bell.fill' }} md="notifications" />
+        {unread > 0 && <NativeTabs.Trigger.Badge>{unread > 9 ? '9+' : String(unread)}</NativeTabs.Trigger.Badge>}
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }

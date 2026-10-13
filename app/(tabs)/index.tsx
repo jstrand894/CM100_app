@@ -18,6 +18,7 @@ import { describeCode, SPOTS, useWeather } from '../../src/data/weather';
 import { clockDuration, CUTOFF_MS, nowMs, Phase, phaseAt, shortDuration, START_MS, upcoming } from '../../src/data/weekend';
 import { BRAND_BLUE, useTheme } from '../../src/theme';
 import { useUnits } from '../../src/units';
+import { TAB_BAR_CLEARANCE } from '../../src/tabBar';
 
 const logo = require('../../assets/brand/cm100-logo-transparent.png');
 const HERO_BG = '#fbf7f0'; // warm cream, picks up the logo's illustrated feel
@@ -281,7 +282,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ height: heroHeight - 36 }} />
-        <View style={[styles.sheet, { backgroundColor: t.bg }]}>
+        <View style={[styles.sheet, { backgroundColor: t.bg, paddingBottom: 60 + TAB_BAR_CLEARANCE }]}>
           <View style={[styles.grabber, { backgroundColor: t.border }]} />
         {online && prep.ready === false && (
           <View style={[styles.prep, { backgroundColor: t.card, borderColor: t.accent }]}>
@@ -431,14 +432,6 @@ export default function HomeScreen() {
         pointerEvents={gearOn ? 'auto' : 'none'}
         style={[styles.gear, { top: insets.top + 8, opacity: scrollY.interpolate({ inputRange: [0, 60], outputRange: [1, 0], extrapolate: 'clamp' }) }]}
       >
-        <Pressable onPress={() => router.push('/notifications')} hitSlop={10} style={[styles.gearBtn, { marginRight: 8 }]} accessibilityRole="button" accessibilityLabel={notices.unread > 0 ? `Notifications, ${notices.unread} unread` : 'Notifications'}>
-          <Ionicons name={notices.unread > 0 ? 'notifications' : 'notifications-outline'} size={22} color={BRAND_BLUE} />
-          {notices.unread > 0 && (
-            <View style={[styles.bellBadge, { backgroundColor: t.accent }]}>
-              <Text style={styles.bellBadgeText}>{notices.unread > 9 ? '9+' : notices.unread}</Text>
-            </View>
-          )}
-        </Pressable>
         <Pressable onPress={() => router.push('/settings')} hitSlop={10} style={styles.gearBtn} accessibilityRole="button" accessibilityLabel="Settings">
           <Ionicons name="settings-outline" size={22} color={BRAND_BLUE} />
         </Pressable>
@@ -451,8 +444,6 @@ const styles = StyleSheet.create({
   heroBg: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: HERO_BG },
   heroOverscroll: { position: 'absolute', top: -800, left: 0, right: 0, height: 800, backgroundColor: HERO_BG },
   gear: { position: 'absolute', right: 14, flexDirection: 'row' },
-  bellBadge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fbf7f0' },
-  bellBadgeText: { color: '#ffffff', fontSize: 10, fontWeight: '900' },
   prep: { borderRadius: 18, borderWidth: 2, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 14 },
   prepBar: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 28 },
   gearBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(11,74,107,0.10)' },

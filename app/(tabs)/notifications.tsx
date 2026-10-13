@@ -1,11 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useRef } from 'react';
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { DetailHeader, tint } from '../src/components/ui';
-import { agoLabel, formatPostDate } from '../src/data/news';
-import { NEWS_PREFIX, useNotifications } from '../src/data/notifications';
-import { useOfflinePrep } from '../src/offline';
-import { useTheme } from '../src/theme';
-import { useUnits } from '../src/units';
+import { ScreenHeader, tint } from '../../src/components/ui';
+import { agoLabel, formatPostDate } from '../../src/data/news';
+import { NEWS_PREFIX, useNotifications } from '../../src/data/notifications';
+import { useOfflinePrep } from '../../src/offline';
+import { useTheme } from '../../src/theme';
+import { useUnits } from '../../src/units';
+import { TAB_BAR_CLEARANCE } from '../../src/tabBar';
 
 export default function NotificationsScreen() {
   const t = useTheme();
@@ -13,14 +16,19 @@ export default function NotificationsScreen() {
   const { items, unread, isRead, markRead, refresh, refreshing, updatedAt, failed } = useNotifications();
   const offline = useOfflinePrep();
 
+  // Items stay marked "new" while the tab is open, then count as read once you leave it.
+  const ids = useRef<string[]>([]);
+  ids.current = items.map((n) => n.id);
+  useFocusEffect(
+    useCallback(() => () => markRead(ids.current), [markRead]),
+  );
+
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <DetailHeader
-        title="Notifications"
-        subtitle={`${unread > 0 ? `${unread} unread · ` : ''}updated ${agoLabel(updatedAt)}${failed ? ' · offline, showing saved' : ''}`}
+      <ScreenHeader title="Inbox" subtitle={`${unread > 0 ? `${unread} unread · ` : ''}updated ${agoLabel(updatedAt)}${failed ? ' · offline, showing saved' : ''}`}
       />
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 40 + TAB_BAR_CLEARANCE }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={t.primary} />}
       >
         <View style={[styles.prep, { backgroundColor: t.card, borderColor: t.border }]}>

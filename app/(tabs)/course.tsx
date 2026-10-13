@@ -9,6 +9,7 @@ import { AID_STATIONS, AidStation, CREW_LABEL, CrewAccess } from '../../src/data
 import { COURSE_STATS, elevationAtMile } from '../../src/data/elevationUtil';
 import { BRAND_BLUE, Theme, useTheme } from '../../src/theme';
 import { useUnits } from '../../src/units';
+import { TAB_BAR_CLEARANCE } from '../../src/tabBar';
 
 const crewColor = (a: CrewAccess, t: Theme) => ({ yes: t.green, 'hike-in': t.amber, no: t.red })[a];
 
@@ -367,7 +368,7 @@ export default function CourseScreen() {
         snapToOffsets={snaps.length ? snaps : undefined}
         snapToEnd={false}
         decelerationRate="fast"
-        contentContainerStyle={[styles.content, { paddingBottom: bottomPad }]}
+        contentContainerStyle={[styles.content, { paddingBottom: bottomPad + TAB_BAR_CLEARANCE }]}
       >
         <View style={[styles.filter, { backgroundColor: t.primarySoft }]}>
           {([['All stops', false], ['Crew access only', true]] as const).map(([label, v]) => {

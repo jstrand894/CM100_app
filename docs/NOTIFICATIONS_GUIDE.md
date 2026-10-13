@@ -22,5 +22,5 @@ pull-to-refresh in the Notifications screen), and keep a saved copy for offline.
 - `id` must be unique and never change after posting (it tracks who has read it). Changing an id makes it "new" again.
 - `date` is `yyyy-mm-dd`. `body`, `link` and `urgent` are optional.
 - Add `"show": false` to hide a notification without deleting it.
-- The red badge on the Home bell counts notifications the person has not opened yet.
+- The red badge on the Inbox tab counts notifications the person has not opened yet.
 - The welcome message is built into the app (`WELCOME` in `src/data/notifications.ts`).

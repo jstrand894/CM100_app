@@ -16,6 +16,7 @@ import { RACE } from '../../src/data/race';
 import { stationColor } from '../../src/stationStyle';
 import { useTheme } from '../../src/theme';
 import { useUnits } from '../../src/units';
+import { TAB_BAR_CLEARANCE } from '../../src/tabBar';
 
 const coords = (course.coordinates as number[][]).map(([latitude, longitude]) => ({ latitude, longitude }));
 const STYLES: { type: MapType; label: string; swatch: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
@@ -128,7 +129,7 @@ export default function MapScreen() {
 
   const fit = () =>
     mapRef.current?.fitToCoordinates(coords, {
-      edgePadding: { top: 60, right: 40, bottom: 260, left: 40 },
+      edgePadding: { top: 60, right: 40, bottom: 260 + TAB_BAR_CLEARANCE, left: 40 },
       animated: true,
     });
 
@@ -231,7 +232,7 @@ export default function MapScreen() {
             setHideDist(d);
           }
         }}
-        style={[styles.card, { backgroundColor: t.card, borderColor: t.border, transform: [{ translateY: sheetShift }] }]}
+        style={[styles.card, { backgroundColor: t.card, borderColor: t.border, bottom: 12 + TAB_BAR_CLEARANCE, transform: [{ translateY: sheetShift }] }]}
         {...sheetPan.panHandlers}
       >
         <Pressable onPress={() => goTo(level.current === -1 ? 0 : level.current === 0 ? 1 : 0)} hitSlop={10} style={styles.handleWrap} accessibilityLabel="Toggle live tracking">
