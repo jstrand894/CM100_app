@@ -232,27 +232,6 @@ export default function AidStationDetail() {
 
       <Animated.View style={{ flex: 1, transform: [{ translateX: slide }] }}>
       <ScrollView ref={scroller} contentContainerStyle={styles.content}>
-        <StationMap id={station.id} />
-
-        {station.driveCoordinate ? (
-          <Pressable onPress={openMaps} style={({ pressed }) => [styles.cta, { backgroundColor: t.primary }, pressed && { opacity: 0.85 }]}>
-            <Ionicons name="navigate" size={20} color="#ffffff" />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.ctaTitle}>Directions in Maps</Text>
-              <Text style={styles.ctaSub}>Needs signal. Download the area in Maps ahead of time.</Text>
-            </View>
-            <Ionicons name="open-outline" size={18} color="#ffffff" />
-          </Pressable>
-        ) : (
-          station.crewAccess !== 'no' && (
-            <Card>
-              <Text style={[styles.note, { color: t.muted }]}>
-                Parking coordinates for this station haven't been added yet. Use the written directions below. Offline routing is planned.
-              </Text>
-            </Card>
-          )
-        )}
-
         <SectionTitle>At a glance</SectionTitle>
         <Card style={{ gap: 14 }}>
           <View style={styles.grid}>
@@ -284,6 +263,27 @@ export default function AidStationDetail() {
               }
             />}
         </Card>
+
+        <StationMap id={station.id} />
+
+        {station.driveCoordinate ? (
+          <Pressable onPress={openMaps} style={({ pressed }) => [styles.cta, { backgroundColor: t.primary }, pressed && { opacity: 0.85 }]}>
+            <Ionicons name="navigate" size={20} color="#ffffff" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.ctaTitle}>Directions in Maps</Text>
+              <Text style={styles.ctaSub}>Needs signal. Download the area in Maps ahead of time.</Text>
+            </View>
+            <Ionicons name="open-outline" size={18} color="#ffffff" />
+          </Pressable>
+        ) : (
+          station.crewAccess !== 'no' && (
+            <Card>
+              <Text style={[styles.note, { color: t.muted }]}>
+                Parking coordinates for this station haven't been added yet. Use the written directions below. Offline routing is planned.
+              </Text>
+            </Card>
+          )
+        )}
 
         {leg && (
           <>
