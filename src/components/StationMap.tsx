@@ -52,13 +52,23 @@ function Inner({ id, expanded }: { id: string; expanded: boolean }) {
   })();
   // Custom pins need a moment to draw before they stop being re-rendered every frame.
   const [tracking, setTracking] = useState(true);
-  useEffect(() => {
-    const timer = setTimeout(() => setTracking(false), 1200);
-    return () => clearTimeout(timer);
-  }, []);
-
   const fit = () =>
     ref.current?.fitToCoordinates(route.all, { edgePadding: { top: expanded ? 100 : 28, right: 36, bottom: expanded ? 110 : 28, left: 36 }, animated: false });
+
+  // The aid station screen switches stations in place, so refit the camera (and redraw the pins) whenever the station changes.
+  const mapReady = useRef(false);
+  useEffect(() => {
+    setThreeD(false);
+    setTracking(true);
+    if (mapReady.current) ref.current?.animateCamera({ pitch: 0, heading: 0 }, { duration: 0 });
+    const refit = setTimeout(() => mapReady.current && fit(), 80);
+    const settle = setTimeout(() => setTracking(false), 1200);
+    return () => {
+      clearTimeout(refit);
+      clearTimeout(settle);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const toggle3D = () => {
     const on = !threeD;
@@ -86,7 +96,10 @@ function Inner({ id, expanded }: { id: string; expanded: boolean }) {
         pitchEnabled={expanded}
         toolbarEnabled={false}
         showsCompass={false}
-        onMapReady={() => setTimeout(fit, 250)}
+        onMapReady={() => {
+          mapReady.current = true;
+          setTimeout(fit, 250);
+        }}
         initialRegion={{ ...route.station.courseCoordinate, latitudeDelta: 0.2, longitudeDelta: 0.2 }}
       >
         {!threeD && <UrlTile urlTemplate={TOPO_TEMPLATE} maximumZ={TOPO_MAX_ZOOM} tileSize={256} zIndex={-1} shouldReplaceMapContent />}
