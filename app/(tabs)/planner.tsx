@@ -465,6 +465,15 @@ export default function PlannerScreen() {
     prevKey.current = nextKey;
   }, [nextKey, pulse]);
 
+  // When the check-in card scrolls out of view, a slim bar stays pinned at the top with the station, time and Check in.
+  const [cardBottom, setCardBottom] = useState(260);
+  const [pinned, setPinned] = useState(false);
+  const barIn = useRef(new Animated.Value(0)).current;
+  const showBar = mode === 'race' && pinned;
+  useEffect(() => {
+    Animated.timing(barIn, { toValue: showBar ? 1 : 0, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
+  }, [showBar, barIn]);
+
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
@@ -547,7 +556,18 @@ export default function PlannerScreen() {
         </View>
       )}
 
-      <ScrollView ref={scroller} style={{ flex: 1 }} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <View style={{ flex: 1 }}>
+      <ScrollView
+        ref={scroller}
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        scrollEventThrottle={32}
+        onScroll={(e) => {
+          const past = e.nativeEvent.contentOffset.y > cardBottom - 24;
+          setPinned((p) => (p === past ? p : past));
+        }}
+      >
         {mode === 'plan' ? (
           <Card>
             <Text style={[styles.label, { color: t.muted }]}>GOAL FINISH TIME (HOURS : MINUTES)</Text>
@@ -576,6 +596,7 @@ export default function PlannerScreen() {
             </Text>
           </Card>
         ) : (
+          <View onLayout={(e) => setCardBottom(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}>
           <Card>
             {lastLoggedIdx < 0 && (
               <View style={[styles.startNote, { backgroundColor: t.primarySoft }]}>
@@ -682,6 +703,7 @@ export default function PlannerScreen() {
               </View>
             )}
           </Card>
+          </View>
         )}
 
         <View style={styles.listHead}>
@@ -782,6 +804,26 @@ export default function PlannerScreen() {
           );
         })}
       </ScrollView>
+      {mode === 'race' && (
+        <Animated.View
+          pointerEvents={showBar ? 'auto' : 'none'}
+          style={[styles.pinBar, { backgroundColor: t.card, borderColor: t.border, opacity: barIn, transform: [{ translateY: barIn.interpolate({ inputRange: [0, 1], outputRange: [-24, 0] }) }] }]}
+        >
+          <Pressable
+            onPress={() => scroller.current?.scrollTo({ y: 0, animated: true })}
+            style={{ flex: 1 }}
+            accessibilityRole="button"
+            accessibilityLabel={`${rs.active.name} at ${shortName(selStation.name)}, ${absLabel(entryAbs)}. Scroll to the check in card`}
+          >
+            <Text style={[styles.pinCaption, { color: t.muted }]} numberOfLines={1}>{`${rs.active.name.toUpperCase()} ARRIVED AT`}</Text>
+            <Text style={[styles.pinTitle, { color: t.text }]} numberOfLines={1}>{`${shortName(selStation.name)} · ${absLabel(entryAbs)}`}</Text>
+          </Pressable>
+          <Pressable onPress={saveEntry} disabled={saving} style={[styles.pinBtn, { backgroundColor: saving ? t.green : t.primary }]} accessibilityRole="button" accessibilityLabel={`Check in at ${absLabel(entryAbs)}`}>
+            <Text style={styles.pinBtnText}>{saving ? 'Checked in' : 'Check in'}</Text>
+          </Pressable>
+        </Animated.View>
+      )}
+      </View>
       <HowItWorks visible={info} onClose={() => setInfo(false)} />
     </View>
   );
@@ -792,6 +834,11 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   headerTitle: { color: '#ffffff', fontSize: 22, fontWeight: '800' },
   top: { paddingHorizontal: 16, paddingTop: 10, zIndex: 2 },
+  pinBar: { position: 'absolute', top: 8, left: 12, right: 12, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, paddingLeft: 14, paddingRight: 8, borderRadius: 16, borderWidth: 1, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4 },
+  pinCaption: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  pinTitle: { fontSize: 16, fontWeight: '800', marginTop: 1 },
+  pinBtn: { paddingHorizontal: 16, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  pinBtnText: { color: '#ffffff', fontSize: 15, fontWeight: '800' },
   timeChip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14, paddingVertical: 6 },
   timeChipText: { fontSize: 28, fontWeight: '900' },
   timeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 14 },
