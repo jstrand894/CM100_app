@@ -200,6 +200,33 @@ export default function AidStationDetail() {
 
       <Animated.View style={{ flex: 1, transform: [{ translateX: slide }] }}>
       <ScrollView ref={scroller} contentContainerStyle={styles.content}>
+        <View style={styles.nav}>
+          {prev ? (
+            <Pressable onPress={() => go(idx - 1)} accessibilityRole="button" accessibilityLabel={`Previous: ${navName(prev.name)}`} style={({ pressed }) => [styles.navBtn, { backgroundColor: t.card, borderColor: t.border }, pressed && { opacity: 0.7 }]}>
+              <Ionicons name="chevron-back" size={22} color={t.primary} />
+              <View style={styles.navCol}>
+                <Text style={[styles.navCaption, { color: t.muted }]}>PREVIOUS</Text>
+                <Text style={[styles.navText, { color: t.text }]} numberOfLines={1}>{navName(prev.name)}</Text>
+                <Text style={[styles.navMiles, { color: t.muted }]}>{u.dist(Math.round((station.mile - prev.mile) * 10) / 10)} back</Text>
+              </View>
+            </Pressable>
+          ) : (
+            <View style={{ flex: 1 }} />
+          )}
+          {next ? (
+            <Pressable onPress={() => go(idx + 1)} accessibilityRole="button" accessibilityLabel={`Next: ${navName(next.name)}`} style={({ pressed }) => [styles.navBtn, { backgroundColor: t.card, borderColor: t.border }, pressed && { opacity: 0.7 }]}>
+              <View style={[styles.navCol, { alignItems: 'flex-end' }]}>
+                <Text style={[styles.navCaption, { color: t.muted }]}>NEXT</Text>
+                <Text style={[styles.navText, { color: t.text }]} numberOfLines={1}>{navName(next.name)}</Text>
+                <Text style={[styles.navMiles, { color: t.muted }]}>{u.dist(Math.round((next.mile - station.mile) * 10) / 10)} ahead</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={22} color={t.primary} />
+            </Pressable>
+          ) : (
+            <View style={{ flex: 1 }} />
+          )}
+        </View>
+
         <Text style={[styles.summary, { color: t.text }]}>{u.text(station.summary)}</Text>
 
         <StationMap id={station.id} />
@@ -338,32 +365,6 @@ export default function AidStationDetail() {
           </>
         )}
 
-        <View style={styles.nav}>
-          {prev ? (
-            <Pressable onPress={() => go(idx - 1)} accessibilityRole="button" accessibilityLabel={`Previous: ${navName(prev.name)}`} style={({ pressed }) => [styles.navBtn, { backgroundColor: t.card, borderColor: t.border }, pressed && { opacity: 0.7 }]}>
-              <Ionicons name="chevron-back" size={22} color={t.primary} />
-              <View style={styles.navCol}>
-                <Text style={[styles.navCaption, { color: t.muted }]}>PREVIOUS</Text>
-                <Text style={[styles.navText, { color: t.text }]} numberOfLines={1}>{navName(prev.name)}</Text>
-                <Text style={[styles.navMiles, { color: t.muted }]}>{u.dist(Math.round((station.mile - prev.mile) * 10) / 10)} back</Text>
-              </View>
-            </Pressable>
-          ) : (
-            <View style={{ flex: 1 }} />
-          )}
-          {next ? (
-            <Pressable onPress={() => go(idx + 1)} accessibilityRole="button" accessibilityLabel={`Next: ${navName(next.name)}`} style={({ pressed }) => [styles.navBtn, { backgroundColor: t.card, borderColor: t.border }, pressed && { opacity: 0.7 }]}>
-              <View style={[styles.navCol, { alignItems: 'flex-end' }]}>
-                <Text style={[styles.navCaption, { color: t.muted }]}>NEXT</Text>
-                <Text style={[styles.navText, { color: t.text }]} numberOfLines={1}>{navName(next.name)}</Text>
-                <Text style={[styles.navMiles, { color: t.muted }]}>{u.dist(Math.round((next.mile - station.mile) * 10) / 10)} ahead</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={22} color={t.primary} />
-            </Pressable>
-          ) : (
-            <View style={{ flex: 1 }} />
-          )}
-        </View>
       </ScrollView>
       </Animated.View>
     </View>
@@ -399,7 +400,7 @@ const styles = StyleSheet.create({
   segThumb: { position: 'absolute', top: 4, left: 4, bottom: 4, borderRadius: 11 },
   segBtn: { flex: 1, alignItems: 'center', paddingVertical: 9 },
   segText: { fontSize: 14, fontWeight: '800' },
-  nav: { flexDirection: 'row', gap: 10, marginTop: 20 },
+  nav: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   navBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1 },
   navCol: { flex: 1 },
   navCaption: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },

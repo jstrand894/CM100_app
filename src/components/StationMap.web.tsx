@@ -52,6 +52,24 @@ function Inner({ id, expanded }: { id: string; expanded: boolean }) {
               <SvgText x={p.x} y={p.y + 3.5} fontSize={here ? 10 : 8.5} fontWeight="800" fontFamily="system-ui, sans-serif" fill="#ffffff" textAnchor="middle">
                 {s.code}
               </SvgText>
+              {/* Name above the point, with a white outline so it reads over the route line. */}
+              {[true, false].map((halo) => (
+                <SvgText
+                  key={String(halo)}
+                  x={Math.min(Math.max(p.x, 46), draw.W - 46)}
+                  y={p.y - (here ? 20 : 16)}
+                  fontSize={here ? 13 : 11.5}
+                  fontWeight="800"
+                  fontFamily="system-ui, sans-serif"
+                  textAnchor="middle"
+                  fill={halo ? '#ffffff' : '#1c2b36'}
+                  stroke={halo ? '#ffffff' : undefined}
+                  strokeWidth={halo ? 4 : undefined}
+                  strokeLinejoin="round"
+                >
+                  {s.name.replace(/^(Start|Finish): /, '').replace(/ \((1st|2nd) visit\)/, '')}
+                </SvgText>
+              ))}
             </G>
           );
         })}
