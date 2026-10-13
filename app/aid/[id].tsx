@@ -211,7 +211,7 @@ export default function AidStationDetail() {
             </Pressable>
           ),
         }}
-        title={station.name}
+        title={station.name.replace(/ \((1st|2nd) visit\)/, '')}
         subtitle={`${u.metric ? 'Km' : 'Mile'} ${u.distNum(station.mile)}${cutoffHours != null ? ` · Cutoff ${clockLabel(cutoffHours)}` : ''}`}>
         <View style={styles.pills}>
           {station.kind === 'start' && <Pill label="Start 6:00 AM" color="#ffffff" icon="time-outline" />}
