@@ -32,9 +32,6 @@ export function StationMapFrame({ route, render }: { route: StationRoute; render
   return (
     <>
       <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
-        <View style={styles.head}>
-          <Text style={[styles.title, { color: t.text }]}>Route around {station.kind === 'start' ? 'the start' : station.name.replace(/^Finish: /, '')}</Text>
-        </View>
         <View style={styles.mapBox}>
           {render(false)}
           <Pressable onPress={() => setOpen(true)} style={styles.expand} hitSlop={8} accessibilityRole="button" accessibilityLabel="Expand map to full screen">
@@ -62,8 +59,6 @@ export function StationMapFrame({ route, render }: { route: StationRoute; render
 
 const styles = StyleSheet.create({
   card: { borderRadius: 18, borderWidth: 1, overflow: 'hidden', marginTop: 14 },
-  head: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 },
-  title: { fontSize: 16, fontWeight: '800' },
   mapBox: { height: 230, backgroundColor: '#e9eef2' },
   expand: { position: 'absolute', top: 10, right: 10, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(11,74,107,0.9)' },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingHorizontal: 14, paddingVertical: 10 },
