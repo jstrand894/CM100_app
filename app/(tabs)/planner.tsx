@@ -44,7 +44,7 @@ const metersBetween = (a: { latitude: number; longitude: number }, b: { latitude
 const goalLabel = (min: number) => `${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
 // Absolute minutes after Friday 12:00 AM -> label such as "Fri 10:45 AM"
 const absLabel = (abs: number) => clockLabel((abs - START_ABS) / 60);
-const shortName = (name: string) => name.replace(/^Start: .*$/, 'Start').replace(/^Finish: /, '').replace(/ \((1st|2nd) visit\)/, ' ($1 visit)');
+const shortName = (name: string) => name.replace(/^Start: .*$/, 'Start').replace(/^Finish: /, '');
 
 type Mode = 'plan' | 'race';
 type Logs = Record<string, number>; // station id -> absolute minutes after Fri 12:00 AM

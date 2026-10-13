@@ -51,4 +51,4 @@ export function fitProject(points: Pt[], W: number, H: number, pad: number) {
   };
 }
 
-export const shortStationName = (name: string) => name.replace(/^Start: .*$/, 'Start').replace(/^Finish: /, '').replace(/ \((1st|2nd) visit\)/, '');
+export const shortStationName = (name: string) => name.replace(/^Start: .*$/, 'Start').replace(/^Finish: /, '');

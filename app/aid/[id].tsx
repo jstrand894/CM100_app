@@ -14,7 +14,6 @@ import { stationColor } from '../../src/stationStyle';
 import { useTheme } from '../../src/theme';
 import { useUnits } from '../../src/units';
 
-// Bottom prev/next buttons are tight on space; the visit suffix is never needed there because the two Cow Camps are never neighbours.
 const navName = (n: string) => shortName(n).replace(/ \(.*\)$/, '');
 const shortName = (n: string) => n.replace(/^Start: .*$/, 'Start').replace(/^Finish: /, '');
 const fmt = (n: number) => n.toLocaleString();
@@ -211,7 +210,7 @@ export default function AidStationDetail() {
             </Pressable>
           ),
         }}
-        title={station.name.replace(/ \((1st|2nd) visit\)/, '')}
+        title={station.name}
         subtitle={`${u.metric ? 'Km' : 'Mile'} ${u.distNum(station.mile)}${cutoffHours != null ? ` · Cutoff ${clockLabel(cutoffHours)}` : ''}`}>
         <View style={styles.pills}>
           {station.kind === 'start' && <Pill label="Start 6:00 AM" color="#ffffff" icon="time-outline" />}
