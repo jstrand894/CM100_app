@@ -49,6 +49,11 @@ export default function MapScreen() {
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const online = useOnline();
+  // The no-service banner can be dismissed; it comes back the next time service drops.
+  const [noticeHidden, setNoticeHidden] = useState(false);
+  useEffect(() => {
+    if (online) setNoticeHidden(false);
+  }, [online]);
   const [mapType, setMapType] = useState<MapType>('standard');
   const [hasLocation, setHasLocation] = useState(false);
   // Custom marker views are snapshotted by the native map, so keep tracking on until they have drawn.
@@ -126,16 +131,6 @@ export default function MapScreen() {
     }
   };
 
-  const gpx = useMemo(() => Asset.fromModule(require('../../assets/data/CM100.gpx')), []);
-  const shareGpx = async () => {
-    try {
-      await gpx.downloadAsync();
-      if (!gpx.localUri) throw new Error('GPX file unavailable');
-      await Sharing.shareAsync(gpx.localUri, { mimeType: 'application/gpx+xml', UTI: 'com.topografix.gpx' });
-    } catch (e) {
-      Alert.alert('Could not share GPX', String(e));
-    }
-  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -171,8 +166,8 @@ export default function MapScreen() {
           </Marker>
         ))}
       </MapView>
-      {!online && (
-        <OfflineNotice style={{ position: 'absolute', top: insets.top + 8, left: 12, right: 12 }}>
+      {!online && !noticeHidden && (
+        <OfflineNotice style={{ position: 'absolute', top: insets.top + 8, left: 12, right: 12 }} onDismiss={() => setNoticeHidden(true)}>
           No signal. The map background may be blank, but the course line, aid stations and your location still show.
         </OfflineNotice>
       )}
@@ -234,7 +229,7 @@ export default function MapScreen() {
             {!mini && <Text style={[styles.cardSub, { color: t.muted }]}>{`${u.dist(course.totalMiles)} · Wilsall to Lennep`}</Text>}
           </View>
           {!mini && (
-          <Pressable onPress={shareGpx} style={[styles.gpx, { backgroundColor: t.primary }]}>
+          <Pressable onPress={() => router.push('/gpx')} style={[styles.gpx, { backgroundColor: t.primary }]}>
             <Ionicons name="download-outline" size={16} color="#ffffff" />
             <Text style={styles.gpxText}>GPX</Text>
           </Pressable>

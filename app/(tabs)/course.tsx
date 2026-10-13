@@ -23,7 +23,7 @@ function Chip({ label, color, icon }: { label: string; color: string; icon?: key
 
 
 // Connector between two stations: distance, climb and descent for the section leading to `next`.
-function Leg({ from, next }: { from: AidStation; next: AidStation }) {
+function Leg({ from, next, gain, loss }: { from: AidStation; next: AidStation; gain: number | null; loss: number | null }) {
   const t = useTheme();
   const u = useUnits();
   const miles = Math.round((next.mile - from.mile) * 10) / 10;
@@ -34,8 +34,8 @@ function Leg({ from, next }: { from: AidStation; next: AidStation }) {
         <Text style={[styles.legTo, { color: t.muted }]}>To {next.name.replace(/^Finish: /, '')}</Text>
         <View style={styles.legChips}>
           <Chip label={u.dist(miles)} color={t.muted} icon="walk" />
-          {next.gainFt != null && <Chip label={`+${u.elev(next.gainFt)}`} color={t.muted} icon="trending-up" />}
-          {next.lossFt != null && <Chip label={`−${u.elev(next.lossFt)}`} color={t.muted} icon="trending-down" />}
+          {gain != null && <Chip label={`+${u.elev(gain)}`} color={t.muted} icon="trending-up" />}
+          {loss != null && <Chip label={`−${u.elev(loss)}`} color={t.muted} icon="trending-down" />}
         </View>
       </View>
     </View>
@@ -163,6 +163,14 @@ export default function CourseScreen() {
   const viewport = useRef(0);
   const lockUntil = useRef(0); // ignore scroll-derived updates briefly after a programmatic jump
   const [activeId, setActiveId] = useState(AID_STATIONS[0].id);
+  // "Crew stops" hides stations crew cannot reach, and the cutoff-only checkpoints.
+  const [crewOnly, setCrewOnly] = useState(false);
+  const list = useMemo(
+    () => (crewOnly ? AID_STATIONS.filter((s) => s.kind === 'start' || s.kind === 'finish' || (s.kind !== 'cutoff' && s.crewAccess !== 'no')) : AID_STATIONS),
+    [crewOnly],
+  );
+  const listRef = useRef(list);
+  listRef.current = list;
 
   // Pull the header down (or tap the handle) to reveal course details; drag sideways on the chart to scrub.
   const progress = useRef(new Animated.Value(0)).current;
@@ -222,7 +230,7 @@ export default function CourseScreen() {
 
   // Swiping the chart slides the course under the marker. The nearest station becomes active as it passes (and the list
   // follows); on release the marker glides and snaps to a station, and a flick steps on to the next one.
-  const nearestStation = (mile: number) => AID_STATIONS.reduce((b, st) => (Math.abs(st.mile - mile) < Math.abs(b.mile - mile) ? st : b), AID_STATIONS[0]);
+  const nearestStation = (mile: number) => listRef.current.reduce((b, st) => (Math.abs(st.mile - mile) < Math.abs(b.mile - mile) ? st : b), listRef.current[0]);
   const scrollListTo = useCallback((id: string) => {
     const r = rows.current[id];
     if (!r) return;
@@ -252,12 +260,12 @@ export default function CourseScreen() {
     (milesPerSec: number) => {
       panning.current = false;
       const now = centerMile.current;
-      let idx = AID_STATIONS.indexOf(nearestStation(now + milesPerSec * 0.18));
+      let idx = listRef.current.indexOf(nearestStation(now + milesPerSec * 0.18));
       // A quick flick that would land back on the station it started from steps on to the next one instead.
       if (Math.abs(milesPerSec) > 15 && AID_STATIONS[idx].id === panFrom.current.id) {
-        idx = Math.min(Math.max(idx + (milesPerSec > 0 ? 1 : -1), 0), AID_STATIONS.length - 1);
+        idx = Math.min(Math.max(idx + (milesPerSec > 0 ? 1 : -1), 0), listRef.current.length - 1);
       }
-      const target = AID_STATIONS[idx];
+      const target = listRef.current[idx];
       activeRef.current = target.id;
       setActiveId(target.id);
       scrollListTo(target.id);
@@ -275,7 +283,7 @@ export default function CourseScreen() {
   const [bottomPad, setBottomPad] = useState(300);
 
   const recompute = useCallback(() => {
-    const measured = AID_STATIONS.map((s) => rows.current[s.id]);
+    const measured = listRef.current.map((s) => rows.current[s.id]);
     if (measured.some((r) => !r)) return;
     setSnaps(measured.map((r) => Math.max(r!.y - SLOT, 0)));
     const last = measured[measured.length - 1]!;
@@ -285,9 +293,9 @@ export default function CourseScreen() {
   const onScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     if (panning.current || Date.now() < lockUntil.current) return;
     const y = e.nativeEvent.contentOffset.y + SLOT;
-    let best = AID_STATIONS[0].id;
+    let best = listRef.current[0].id;
     let bestDist = Infinity;
-    for (const s of AID_STATIONS) {
+    for (const s of listRef.current) {
       const r = rows.current[s.id];
       if (!r) continue;
       const d = Math.abs(r.y - y);
@@ -298,6 +306,15 @@ export default function CourseScreen() {
     }
     setActiveId((prev) => (prev === best ? prev : best));
   }, []);
+
+  useEffect(() => {
+    if (!list.some((st) => st.id === activeId)) {
+      const mile = AID_STATIONS.find((st) => st.id === activeId)?.mile ?? 0;
+      setActiveId(list.reduce((b, st) => (Math.abs(st.mile - mile) < Math.abs(b.mile - mile) ? st : b), list[0]).id);
+    }
+    recompute();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list]);
 
   const jumpTo = useCallback((id: string) => {
     const r = rows.current[id];
@@ -316,10 +333,7 @@ export default function CourseScreen() {
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <View style={[styles.header, { paddingTop: insets.top + 8 }]} {...pan.panHandlers}>
         <View style={styles.titleRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Course</Text>
-            {!collapsed && <Text style={styles.sub}>Pull down to see the whole course</Text>}
-          </View>
+          <View style={{ flex: 1 }} />
           <Pressable onPress={toggleCollapsed} hitSlop={10} style={styles.collapseBtn} accessibilityRole="button" accessibilityLabel={collapsed ? 'Show elevation profile' : 'Hide elevation profile'}>
             <Ionicons name={collapsed ? 'chevron-down' : 'chevron-up'} size={18} color="#ffffff" />
           </Pressable>
@@ -356,16 +370,27 @@ export default function CourseScreen() {
         decelerationRate="fast"
         contentContainerStyle={[styles.content, { paddingBottom: bottomPad }]}
       >
-        {AID_STATIONS.map((item, idx) => {
+        <View style={[styles.filter, { backgroundColor: t.primarySoft }]}>
+          {([['All stops', false], ['Crew access only', true]] as const).map(([label, v]) => {
+            const on = crewOnly === v;
+            return (
+              <Pressable key={label} onPress={() => setCrewOnly(v)} style={[styles.filterBtn, on && { backgroundColor: t.card }]} accessibilityRole="button" accessibilityState={{ selected: on }}>
+                <Text style={[styles.filterText, { color: on ? t.primary : t.muted }]}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        {list.map((item, idx) => {
           const kc = t.primary;
+          const sel = !collapsed && item.id === activeId;
           return (
             <View key={item.id} onLayout={onRowLayout(item.id)}>
-              <Grow active={item.id === activeId}>
+              <Grow active={sel}>
               <Link href={{ pathname: '/aid/[id]', params: { id: item.id } }} asChild>
                 <Pressable
                   style={StyleSheet.flatten([
                     styles.row,
-                    item.id === activeId ? { backgroundColor: t.card, borderColor: t.primary, borderWidth: 2, padding: 11 } : { backgroundColor: t.card, borderColor: t.border, borderWidth: 1 },
+                    sel ? { backgroundColor: t.card, borderColor: t.primary, borderWidth: 2, padding: 11 } : { backgroundColor: t.card, borderColor: t.border, borderWidth: 1 },
                   ])}
                 >
                   <View style={styles.badge}>
@@ -395,7 +420,14 @@ export default function CourseScreen() {
                 </Pressable>
               </Link>
               </Grow>
-              {idx < AID_STATIONS.length - 1 && <Leg from={item} next={AID_STATIONS[idx + 1]} />}
+              {idx < list.length - 1 && (() => {
+                const nxt = list[idx + 1];
+                const a = AID_STATIONS.indexOf(item);
+                const b = AID_STATIONS.indexOf(nxt);
+                const between = AID_STATIONS.slice(a + 1, b + 1);
+                const sum = (k: 'gainFt' | 'lossFt') => (between.every((x) => x[k] == null) ? null : between.reduce((n, x) => n + (x[k] ?? 0), 0));
+                return <Leg from={item} next={nxt} gain={sum('gainFt')} loss={sum('lossFt')} />;
+              })()}
               {item.kind === 'finish' && (
                 <Pressable
                   onPress={() => router.push('/planner')}
@@ -423,10 +455,13 @@ export default function CourseScreen() {
 const styles = StyleSheet.create({
   header: { backgroundColor: BRAND_BLUE, paddingHorizontal: 12, paddingBottom: 10, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   title: { color: '#ffffff', fontSize: 26, fontWeight: '800', marginLeft: 8 },
-  titleRow: { flexDirection: 'row', alignItems: 'center' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   collapseBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.15)', marginRight: 4 },
   sub: { color: '#bcd6e6', fontSize: 13, fontWeight: '600', marginLeft: 8, marginTop: 2, marginBottom: 10 },
   chart: { marginHorizontal: -4 },
+  filter: { flexDirection: 'row', borderRadius: 12, padding: 3, marginBottom: 12 },
+  filterBtn: { flex: 1, minHeight: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  filterText: { fontSize: 14, fontWeight: '800' },
   content: { padding: 16, paddingTop: 12 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 18, gap: 12 },
   badge: { width: 60, height: 60, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },

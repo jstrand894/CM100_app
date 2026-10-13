@@ -102,12 +102,17 @@ export function ListRow({
 }
 
 // Small notice shown while the phone has no connection. Saved data keeps working, so say what still does.
-export function OfflineNotice({ children, style }: { children: string; style?: ViewStyle }) {
+export function OfflineNotice({ children, style, onDismiss }: { children: string; style?: ViewStyle; onDismiss?: () => void }) {
   const t = useTheme();
   return (
     <View style={[styles.offline, { backgroundColor: t.accentSoft }, style]} accessibilityRole="alert">
       <Ionicons name="cloud-offline" size={18} color={t.accent} />
       <Text style={[styles.offlineText, { color: t.text }]}>{children}</Text>
+      {onDismiss && (
+        <Pressable onPress={onDismiss} hitSlop={12} accessibilityRole="button" accessibilityLabel="Dismiss">
+          <Ionicons name="close" size={20} color={t.muted} />
+        </Pressable>
+      )}
     </View>
   );
 }

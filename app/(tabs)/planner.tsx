@@ -703,8 +703,21 @@ export default function PlannerScreen() {
                 choose(s.id);
                 scroller.current?.scrollTo({ y: 0, animated: true });
               }}
-              style={[styles.row, { backgroundColor: t.card, borderColor: behind ? t.red : selected ? t.primary : isLogged ? t.green : t.border, borderWidth: selected ? 2 : 1, opacity: passed && !isLogged ? 0.6 : 1 }]}
+              style={[styles.tlRow, selected && { backgroundColor: t.primarySoft }, { opacity: passed && !isLogged ? 0.6 : 1 }]}
             >
+              <View
+                pointerEvents="none"
+                style={[styles.railLine, { backgroundColor: t.border }, idx === 0 ? { top: 24 } : { top: 0 }, idx === AID_STATIONS.length - 1 ? { height: 24 } : { bottom: 0 }]}
+              />
+              <View
+                pointerEvents="none"
+                style={[
+                  styles.dot,
+                  { borderColor: behind ? t.red : isLogged ? t.green : selected ? t.primary : t.muted, backgroundColor: isLogged ? t.green : selected ? t.primary : t.bg },
+                ]}
+              >
+                {isLogged && <Ionicons name="checkmark" size={10} color="#ffffff" />}
+              </View>
               <View style={styles.rowTop}>
                 <View style={{ flex: 1 }}>
                   <View style={styles.nameRow}>
@@ -806,6 +819,9 @@ const styles = StyleSheet.create({
   undoText: { fontSize: 15, fontWeight: '800' },
   savedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   saveText: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
+  tlRow: { paddingLeft: 40, paddingRight: 10, paddingVertical: 12, borderRadius: 14 },
+  railLine: { position: 'absolute', left: 17, width: 2 },
+  dot: { position: 'absolute', left: 9, top: 16, width: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   listHead: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
   row: { borderRadius: 16, borderWidth: 1, padding: 14, marginBottom: 10 },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },

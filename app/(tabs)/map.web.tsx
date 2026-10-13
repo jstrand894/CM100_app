@@ -43,7 +43,6 @@ export default function MapScreen() {
         .join(' '),
     [],
   );
-  const gpxUrl = useMemo(() => Asset.fromModule(require('../../assets/data/CM100.gpx')).uri, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
@@ -75,7 +74,7 @@ export default function MapScreen() {
             <Ionicons name="radio" size={18} color="#ffffff" />
             <Text style={styles.btnText}>Live tracking</Text>
           </Pressable>
-          <Pressable onPress={() => Linking.openURL(gpxUrl)} style={[styles.btn, { backgroundColor: t.primarySoft }]}>
+          <Pressable onPress={() => router.push('/gpx')} style={[styles.btn, { backgroundColor: t.primarySoft }]}>
             <Ionicons name="download-outline" size={18} color={t.primary} />
             <Text style={[styles.btnText, { color: t.primary }]}>Course GPX</Text>
           </Pressable>
