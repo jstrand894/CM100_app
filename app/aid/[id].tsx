@@ -148,6 +148,23 @@ export default function AidStationDetail() {
       },
     })
   ).current;
+  // Swiping the header moves to the next or previous aid station, like the arrow buttons.
+  const stepState = useRef({ go, idx });
+  useEffect(() => {
+    stepState.current = { go, idx };
+  });
+  const headerSwipe = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_, g) => {
+        const { go: step, idx: at } = stepState.current;
+        if (g.dx < -50 && at < AID_STATIONS.length - 1) step(at + 1);
+        else if (g.dx > 50 && at > 0) step(at - 1);
+      },
+    }),
+  ).current;
+
   const station: AidStation | undefined = AID_STATIONS[idx];
   if (!station)
     return (
@@ -179,6 +196,7 @@ export default function AidStationDetail() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
+      <View {...headerSwipe.panHandlers} onTouchStart={() => lockBack(true)} onTouchEnd={() => lockBack(false)} onTouchCancel={() => lockBack(false)}>
       <DetailHeader
         compact
         flank={{
@@ -210,6 +228,7 @@ export default function AidStationDetail() {
           {station.dropBags && <Pill label="Drop bags" color="#ffb26b" icon="bag-handle" />}
         </View>
       </DetailHeader>
+      </View>
 
       <Animated.View style={{ flex: 1, transform: [{ translateX: slide }] }}>
       <ScrollView ref={scroller} contentContainerStyle={styles.content}>
