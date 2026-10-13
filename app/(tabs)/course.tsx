@@ -114,19 +114,9 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-const SELECTED_SCALE = 1.04;
-
-// Grows the selected station card slightly.
+// Keeps the selected card above its neighbours. It is not scaled, so its edges stay sharp.
 function Grow({ active, children }: { active: boolean; children: ReactNode }) {
-  const v = useRef(new Animated.Value(active ? 1 : 0)).current;
-  useEffect(() => {
-    Animated.spring(v, { toValue: active ? 1 : 0, useNativeDriver: true, speed: 18, bounciness: 6 }).start();
-  }, [active, v]);
-  return (
-    <Animated.View style={{ transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, SELECTED_SCALE] }) }], zIndex: active ? 1 : 0 }}>
-      {children}
-    </Animated.View>
-  );
+  return <View style={{ zIndex: active ? 1 : 0 }}>{children}</View>;
 }
 
 const ZOOM_SPAN = 38;
@@ -375,7 +365,7 @@ export default function CourseScreen() {
                 <Pressable
                   style={StyleSheet.flatten([
                     styles.row,
-                    { backgroundColor: item.id === activeId ? t.primarySoft : t.card, borderColor: item.id === activeId ? t.primarySoft : t.border, borderWidth: 1 },
+                    item.id === activeId ? { backgroundColor: t.card, borderColor: t.primary, borderWidth: 2, padding: 11 } : { backgroundColor: t.card, borderColor: t.border, borderWidth: 1 },
                   ])}
                 >
                   <View style={styles.badge}>
