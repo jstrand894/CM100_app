@@ -22,7 +22,7 @@ export const spotDetail = (s: WeatherSpot, u: Units) =>
   s.mile != null ? `${u.metric ? 'Km' : 'Mile'} ${u.distNum(s.mile)} · ${u.elev(s.shownFt)}` : `${s.place} · ${u.elev(s.shownFt)}`;
 
 export const SPOTS: WeatherSpot[] = [
-  { id: 'start', label: 'Start', place: 'Westling Ranch', shownFt: 5800, lat: 46.12057, lon: -110.52195, ft: 5816 },
+  { id: 'start', label: 'Start', place: 'Westling Ranch', shownFt: 5800, lat: 46.11647, lon: -110.52209, ft: 5816 },
   { id: 'high', label: 'High country', place: 'High country', mile: 50, shownFt: 10000, lat: 46.0502, lon: -110.33309, ft: 10003 },
 ];
 
