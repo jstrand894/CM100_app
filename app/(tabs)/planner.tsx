@@ -280,7 +280,6 @@ export default function PlannerScreen() {
   const loggable = AID_STATIONS.filter((s) => s.kind !== 'start');
   const selIdx = loggable.findIndex((s) => s.id === sel);
   const selStation = loggable[selIdx];
-  const projected = START_ABS + Math.round(proj.elapsed[sel] * 60);
   // Re-check every few seconds so the button wakes up at the gun even if the screen is just sitting open.
   const [raceStarted, setRaceStarted] = useState(() => nowMs() >= START_MS);
   useEffect(() => {
@@ -288,14 +287,18 @@ export default function PlannerScreen() {
     const id = setInterval(() => nowMs() >= START_MS && setRaceStarted(true), 15000);
     return () => clearInterval(id);
   }, [raceStarted]);
-  // Checking in uses the current time, kept fresh while the screen is open. Before the race starts it falls back to the plan's time.
+  // Checking in uses the current time, kept fresh while the screen is open. Before the race starts there is no race clock, so it
+  // uses the phone's time of day on Friday, which lets the screen be tried out ahead of time.
   const [, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick((n) => n + 1), 20000);
     return () => clearInterval(id);
   }, []);
-  const liveAbs = Math.min(Math.max(START_ABS + Math.floor((nowMs() - START_MS) / 60000), START_ABS), 2 * DAY - 1);
-  const entryAbs = entry ?? (raceStarted ? liveAbs : Math.round(projected / 5) * 5);
+  const nowDate = new Date(nowMs());
+  const liveAbs = raceStarted
+    ? Math.min(Math.max(START_ABS + Math.floor((nowMs() - START_MS) / 60000), START_ABS), 2 * DAY - 1)
+    : nowDate.getHours() * 60 + nowDate.getMinutes();
+  const entryAbs = entry ?? liveAbs;
   const [editTime, setEditTime] = useState(false);
   // Station change is one motion: the old name slides a short way and fades out while the new one slides in and fades up.
   const go = useRef(new Animated.Value(1)).current; // 0 -> 1 across a change
@@ -673,7 +676,7 @@ export default function PlannerScreen() {
               <Ionicons name={editTime ? 'chevron-up' : 'create-outline'} size={18} color={t.primary} />
             </Pressable>
             <Text style={[styles.goalSub, { color: t.muted }]}>
-              {entry != null ? 'Time set by hand' : raceStarted ? 'Current time. Tap it to change.' : "The plan's time. The race hasn't started."}
+              {entry != null ? 'Time set by hand' : raceStarted ? 'Current time. Tap it to change.' : 'Current time (the race hasn\'t started). Tap it to change.'}
             </Text>
             {editTime && (
               <View style={styles.timeRow}>
@@ -692,7 +695,7 @@ export default function PlannerScreen() {
             )}
             {editTime && entry != null && (
               <Pressable onPress={() => setEntry(null)} hitSlop={8} style={{ alignSelf: 'center', marginTop: 8 }}>
-                <Text style={[styles.link, { color: t.primary }]}>{raceStarted ? 'Use the current time' : "Use the plan's time"}</Text>
+                <Text style={[styles.link, { color: t.primary }]}>Use the current time</Text>
               </Pressable>
             )}
 
