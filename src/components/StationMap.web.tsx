@@ -2,13 +2,13 @@ import { useMemo, useState } from 'react';
 import { LayoutChangeEvent, View } from 'react-native';
 import Svg, { Circle, G, Image as SvgImage, Polyline, Text as SvgText } from 'react-native-svg';
 import { placeLabels } from '../data/labelPlacement';
+import { TOPO_ATTRIBUTION, topoTileUrl } from '../data/topoTiles';
 import { fitProject, shortStationName, stationRoute } from '../data/stationRoute';
 import { stationColor } from '../stationStyle';
 import { useTheme } from '../theme';
 import { StationMapFrame } from './StationMapFrame';
 
-// The web has no native map view, so the stretch of course is drawn directly on USGS topo tiles.
-const TILE_URL = (z: number, x: number, y: number) => `https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/${z}/${y}/${x}`;
+// The web has no native map view, so the stretch of course is drawn directly on topo tiles.
 const tileX = (lon: number, z: number) => Math.floor(((lon + 180) / 360) * 2 ** z);
 const tileY = (lat: number, z: number) => {
   const r = (lat * Math.PI) / 180;
@@ -65,7 +65,7 @@ function Inner({ id, expanded }: { id: string; expanded: boolean }) {
         for (let ty = y0; ty <= y1; ty++) {
           const a = fit.project(tileLat(ty, z), tileLon(tx, z));
           const b = fit.project(tileLat(ty + 1, z), tileLon(tx + 1, z));
-          tiles.push({ key: `${z}/${tx}/${ty}`, x: a.x, y: a.y, w: b.x - a.x + 0.6, h: b.y - a.y + 0.6, url: TILE_URL(z, tx, ty) });
+          tiles.push({ key: `${z}/${tx}/${ty}`, x: a.x, y: a.y, w: b.x - a.x + 0.6, h: b.y - a.y + 0.6, url: topoTileUrl(z, tx, ty) });
         }
       break;
     }
@@ -118,7 +118,7 @@ function Inner({ id, expanded }: { id: string; expanded: boolean }) {
           );
         })}
         <SvgText x={size.W - 6} y={size.H - 6} fontSize={9} fontFamily="system-ui, sans-serif" fill="#3b4a54" textAnchor="end">
-          USGS The National Map
+          {TOPO_ATTRIBUTION}
         </SvgText>
       </Svg>
     </View>

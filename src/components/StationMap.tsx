@@ -4,13 +4,12 @@ import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from
 import MapView, { MapType, Marker, Polyline, UrlTile } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { placeLabels, Side } from '../data/labelPlacement';
+import { TOPO_ATTRIBUTION, TOPO_MAX_ZOOM, TOPO_TEMPLATE } from '../data/topoTiles';
 import { fitProject, shortStationName, stationRoute } from '../data/stationRoute';
 import { stationColor } from '../stationStyle';
 import { useTheme } from '../theme';
 import { StationMapFrame } from './StationMapFrame';
 
-// USGS topographic tiles: contours, trails and shading, like a GPS app's map. They need a data connection.
-const TOPO_TILES = 'https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}';
 
 // Compass bearing from one point to another, so the 3D view can look along the trail.
 const bearing = (a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }) => {
@@ -90,7 +89,7 @@ function Inner({ id, expanded }: { id: string; expanded: boolean }) {
         onMapReady={() => setTimeout(fit, 250)}
         initialRegion={{ ...route.station.courseCoordinate, latitudeDelta: 0.2, longitudeDelta: 0.2 }}
       >
-        {!threeD && <UrlTile urlTemplate={TOPO_TILES} maximumZ={16} tileSize={256} zIndex={-1} shouldReplaceMapContent />}
+        {!threeD && <UrlTile urlTemplate={TOPO_TEMPLATE} maximumZ={TOPO_MAX_ZOOM} tileSize={256} zIndex={-1} shouldReplaceMapContent />}
         {route.before.length > 1 && <Polyline coordinates={route.before} strokeColor="#ffffff" strokeWidth={7} />}
         {route.after.length > 1 && <Polyline coordinates={route.after} strokeColor="#ffffff" strokeWidth={7} />}
         {route.before.length > 1 && <Polyline coordinates={route.before} strokeColor={t.primary} strokeWidth={4} />}
@@ -127,7 +126,7 @@ function Inner({ id, expanded }: { id: string; expanded: boolean }) {
           );
         })}
       </MapView>
-      {!threeD && <Text style={styles.attribution}>USGS The National Map</Text>}
+      {!threeD && <Text style={styles.attribution}>{TOPO_ATTRIBUTION}</Text>}
       {expanded && (
         <Pressable onPress={toggle3D} style={[styles.threeD, { bottom: insets.bottom + 84, backgroundColor: threeD ? t.accent : 'rgba(11,74,107,0.92)' }]} accessibilityRole="button" accessibilityState={{ selected: threeD }} accessibilityLabel="Toggle 3D terrain view">
           <Ionicons name="cube-outline" size={18} color="#ffffff" />
