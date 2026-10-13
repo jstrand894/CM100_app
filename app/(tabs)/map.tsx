@@ -30,15 +30,29 @@ const PEEK_H = 58; // visible height of the minimized sheet
 // Zoomed out: two-letter code. Zoomed in: code plus mile marker.
 const NEAR_DELTA = 0.22;
 
-function StationPin({ code, mile, color, near, small }: { code: string; mile: number; color: string; near: boolean; small?: boolean }) {
+// Station marker. Zoomed out it is a compact badge with the station code; zoomed in it becomes a white label with the
+// name and mile next to the badge. Both sit on a small pointer so the point is clear.
+function StationPin({ code, name, mile, color, near, small }: { code: string; name: string; mile: number; color: string; near: boolean; small?: boolean }) {
   const u = useUnits();
+  const badge = (
+    <View style={[styles.badge, small && styles.badgeSmall, { backgroundColor: color }]}>
+      <Text style={[styles.badgeText, small && { fontSize: 10 }]}>{code}</Text>
+    </View>
+  );
   return (
     <View style={styles.pinWrap}>
-      <View style={[styles.pin, small && styles.pinSmall, near && styles.pinNear, { backgroundColor: color }]}>
-        <Text style={styles.pinText}>{code}</Text>
-        {near && <Text style={styles.pinMile}>{u.dist(Math.round(mile * 10) / 10)}</Text>}
-      </View>
-      <View style={[styles.pinTip, { borderTopColor: color }]} />
+      {near ? (
+        <View style={styles.label}>
+          {badge}
+          <View style={styles.labelBody}>
+            <Text style={styles.labelName} numberOfLines={1}>{name}</Text>
+            <Text style={styles.labelMile}>{u.dist(Math.round(mile * 10) / 10)}</Text>
+          </View>
+        </View>
+      ) : (
+        badge
+      )}
+      <View style={[styles.pointer, { borderTopColor: near ? '#ffffff' : color }]} />
     </View>
   );
 }
@@ -162,7 +176,7 @@ export default function MapScreen() {
             tracksViewChanges={pinsTracking}
             onCalloutPress={() => router.push({ pathname: '/aid/[id]', params: { id: st.id } })}
           >
-            <StationPin code={st.code} mile={st.mile} color={stationColor(st, t)} near={near} small={st.kind === 'cutoff'} />
+            <StationPin code={st.code} name={st.name.replace(/^(Start|Finish): /, '').replace(/^Westling Ranch$/, 'Start')} mile={st.mile} color={stationColor(st, t)} near={near} small={st.kind === 'cutoff'} />
           </Marker>
         ))}
       </MapView>
@@ -282,12 +296,14 @@ function RoundButton({ icon, label, onPress, active }: { icon: keyof typeof Ioni
 
 const styles = StyleSheet.create({
   pinWrap: { alignItems: 'center' },
-  pin: { minWidth: 36, height: 36, borderRadius: 18, paddingHorizontal: 7, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
-  pinSmall: { minWidth: 30, height: 30, borderRadius: 15 },
-  pinNear: { height: 44, borderRadius: 16, paddingHorizontal: 9 },
-  pinMile: { color: 'rgba(255,255,255,0.92)', fontSize: 10, fontWeight: '800', marginTop: -1 },
-  pinText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
-  pinTip: { width: 0, height: 0, borderLeftWidth: 5, borderRightWidth: 5, borderTopWidth: 7, borderLeftColor: 'transparent', borderRightColor: 'transparent', marginTop: -2 },
+  badge: { minWidth: 34, height: 34, borderRadius: 12, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+  badgeSmall: { minWidth: 26, height: 26, borderRadius: 9, borderWidth: 2.5 },
+  badgeText: { color: '#ffffff', fontSize: 12, fontWeight: '900', letterSpacing: 0.2 },
+  label: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4, paddingLeft: 4, paddingRight: 12, borderRadius: 16, backgroundColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } },
+  labelBody: { maxWidth: 130 },
+  labelName: { color: '#1c2b36', fontSize: 12.5, fontWeight: '800' },
+  labelMile: { color: '#5b6770', fontSize: 11, fontWeight: '700', marginTop: -1 },
+  pointer: { width: 0, height: 0, borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8, borderLeftColor: 'transparent', borderRightColor: 'transparent', marginTop: -2 },
   layers: { position: 'absolute', right: 68, width: 250, borderRadius: 18, borderWidth: 1, padding: 14, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
   layersTitle: { fontSize: 11, fontWeight: '800', letterSpacing: 0.7, marginBottom: 10 },
   styleRow: { flexDirection: 'row', justifyContent: 'space-between' },
