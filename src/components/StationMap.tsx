@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import MapView, { MapType, Marker, Polyline, UrlTile } from 'react-native-maps';
+import MapView, { MapType, Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { placeLabels, Side } from '../data/labelPlacement';
-import { TOPO_ATTRIBUTION, TOPO_MAX_ZOOM, TOPO_TEMPLATE } from '../data/topoTiles';
 import { fitProject, shortStationName, stationRoute } from '../data/stationRoute';
 import { stationColor } from '../stationStyle';
 import { useTheme } from '../theme';
@@ -50,8 +49,18 @@ function Inner({ id, expanded }: { id: string; expanded: boolean }) {
       { W, H },
     );
   })();
-  // Custom pins need a moment to draw before they stop being re-rendered every frame.
-  const [tracking, setTracking] = useState(true);
+  // The station dots and names are drawn by this app, on top of the map, at the screen position the map reports for each
+  // coordinate. (Custom views inside map markers land in different places on iOS and Android.)
+  const stops = [route.prev, route.station, route.next].filter((s): s is NonNullable<typeof s> => !!s);
+  const [screenPts, setScreenPts] = useState<Record<string, { x: number; y: number }>>({});
+  const updatePts = async () => {
+    const map = ref.current;
+    if (!map) return;
+    try {
+      const entries = await Promise.all(stops.map(async (st) => [st.id, await map.pointForCoordinate(st.courseCoordinate)] as const));
+      setScreenPts(Object.fromEntries(entries));
+    } catch {}
+  };
   const fit = () =>
     ref.current?.fitToCoordinates(route.all, { edgePadding: { top: expanded ? 100 : 28, right: 36, bottom: expanded ? 110 : 28, left: 36 }, animated: false });
 
@@ -59,10 +68,9 @@ function Inner({ id, expanded }: { id: string; expanded: boolean }) {
   const mapReady = useRef(false);
   useEffect(() => {
     setThreeD(false);
-    setTracking(true);
     if (mapReady.current) ref.current?.animateCamera({ pitch: 0, heading: 0 }, { duration: 0 });
     const refit = setTimeout(() => mapReady.current && fit(), 80);
-    const settle = setTimeout(() => setTracking(false), 1200);
+    const settle = setTimeout(updatePts, 400);
     return () => {
       clearTimeout(refit);
       clearTimeout(settle);
@@ -82,7 +90,7 @@ function Inner({ id, expanded }: { id: string; expanded: boolean }) {
     }
   };
   // Apple Maps' flyover imagery shows real terrain in 3D; Google's terrain layer does on Android.
-  const mapType: MapType = threeD ? (Platform.OS === 'ios' ? 'hybridFlyover' : 'terrain') : Platform.OS === 'android' ? 'none' : 'standard';
+  const mapType: MapType = threeD ? (Platform.OS === 'ios' ? 'hybridFlyover' : 'terrain') : 'standard';
 
   return (
     <View style={{ flex: 1 }}>
@@ -99,47 +107,48 @@ function Inner({ id, expanded }: { id: string; expanded: boolean }) {
         onMapReady={() => {
           mapReady.current = true;
           setTimeout(fit, 250);
+          setTimeout(updatePts, 500);
         }}
+        onRegionChangeComplete={updatePts}
+        onRegionChange={expanded ? updatePts : undefined}
         initialRegion={{ ...route.station.courseCoordinate, latitudeDelta: 0.2, longitudeDelta: 0.2 }}
       >
-        {!threeD && <UrlTile urlTemplate={TOPO_TEMPLATE} maximumZ={TOPO_MAX_ZOOM} tileSize={256} zIndex={-1} shouldReplaceMapContent />}
-        {route.before.length > 1 && <Polyline coordinates={route.before} strokeColor="#ffffff" strokeWidth={7} />}
-        {route.after.length > 1 && <Polyline coordinates={route.after} strokeColor="#ffffff" strokeWidth={7} />}
-        {route.before.length > 1 && <Polyline coordinates={route.before} strokeColor={t.primary} strokeWidth={4} />}
-        {route.after.length > 1 && <Polyline coordinates={route.after} strokeColor={t.accent} strokeWidth={4} />}
-        {[route.prev, route.station, route.next].map((s) => {
-          if (!s) return null;
-          const here = s.id === route.station.id;
-          const side: Side = sides[s.id] ?? 'above';
-          const tag = (
-            <View style={[styles.label, { backgroundColor: here ? stationColor(s, t) : '#ffffff' }]}>
-              <Text style={[styles.labelText, { color: here ? '#ffffff' : '#1c2b36' }]} numberOfLines={1}>
-                {shortStationName(s.name)}
-              </Text>
+        {route.before.length > 1 && <Polyline coordinates={route.before} strokeColor="#ffffff" strokeWidth={7} zIndex={1} />}
+        {route.after.length > 1 && <Polyline coordinates={route.after} strokeColor="#ffffff" strokeWidth={7} zIndex={1} />}
+        {route.before.length > 1 && <Polyline coordinates={route.before} strokeColor={t.primary} strokeWidth={4} zIndex={2} />}
+        {route.after.length > 1 && <Polyline coordinates={route.after} strokeColor={t.accent} strokeWidth={4} zIndex={2} />}
+      </MapView>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        {stops.map((st) => {
+          const pt = screenPts[st.id];
+          if (!pt) return null;
+          const here = st.id === route.station.id;
+          const side: Side = sides[st.id] ?? 'above';
+          const d = here ? 18 : 14;
+          const color = stationColor(st, t);
+          const gap = d / 2 + 4;
+          const labelPos =
+            side === 'right'
+              ? { left: gap, top: -12 }
+              : side === 'left'
+                ? { right: gap, top: -12 }
+                : side === 'above'
+                  ? { left: -100, width: 200, bottom: gap, alignItems: 'center' as const }
+                  : { left: -100, width: 200, top: gap, alignItems: 'center' as const };
+          return (
+            <View key={st.id} style={[styles.anchor, { left: pt.x, top: pt.y, zIndex: here ? 2 : 1 }]}>
+              <View style={[styles.dot, { backgroundColor: color, width: d, height: d, left: -d / 2, top: -d / 2 }]} />
+              <View style={[styles.labelWrap, labelPos]}>
+                <View style={[styles.label, { backgroundColor: here ? color : '#ffffff' }]}>
+                  <Text style={[styles.labelText, { color: here ? '#ffffff' : '#1c2b36' }]} numberOfLines={1}>
+                    {shortStationName(st.name)}
+                  </Text>
+                </View>
+              </View>
             </View>
           );
-          const dot = <View style={[styles.dot, { backgroundColor: stationColor(s, t), width: here ? 18 : 14, height: here ? 18 : 14 }]} />;
-          // The point itself sits on the anchor; the name hangs off whichever side keeps clear of the trail.
-          const layout = {
-            right: { dir: 'row' as const, anchor: { x: 0, y: 0.5 }, label: [dot, tag] },
-            left: { dir: 'row' as const, anchor: { x: 1, y: 0.5 }, label: [tag, dot] },
-            above: { dir: 'column' as const, anchor: { x: 0.5, y: 1 }, label: [tag, dot] },
-            below: { dir: 'column' as const, anchor: { x: 0.5, y: 0 }, label: [dot, tag] },
-          }[side];
-          return (
-            <Marker key={s.id} coordinate={s.courseCoordinate} anchor={layout.anchor} tracksViewChanges={tracking} zIndex={here ? 2 : 1}>
-              <View style={[styles.pin, { flexDirection: layout.dir }]}>
-                {layout.label.map((el, i) => (
-                  <View key={i} style={side === 'right' ? { marginLeft: i ? 4 : 0 } : side === 'left' ? { marginRight: i === 0 ? 4 : 0 } : side === 'above' ? { marginBottom: i === 0 ? 3 : 0 } : { marginTop: i ? 3 : 0 }}>
-                    {el}
-                  </View>
-                ))}
-              </View>
-            </Marker>
-          );
         })}
-      </MapView>
-      {!threeD && <Text style={styles.attribution}>{TOPO_ATTRIBUTION}</Text>}
+      </View>
       {expanded && (
         <Pressable onPress={toggle3D} style={[styles.threeD, { bottom: insets.bottom + 84, backgroundColor: threeD ? t.accent : 'rgba(11,74,107,0.92)' }]} accessibilityRole="button" accessibilityState={{ selected: threeD }} accessibilityLabel="Toggle 3D terrain view">
           <Ionicons name="cube-outline" size={18} color="#ffffff" />
@@ -151,11 +160,11 @@ function Inner({ id, expanded }: { id: string; expanded: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  pin: { alignItems: 'center' },
-  attribution: { position: 'absolute', left: 8, bottom: 6, fontSize: 9, color: '#3b4a54' },
+  anchor: { position: 'absolute', width: 0, height: 0 },
+  labelWrap: { position: 'absolute' },
   label: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, maxWidth: 150, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 3 },
   labelText: { fontSize: 12, fontWeight: '800' },
-  dot: { borderRadius: 9, borderWidth: 2.5, borderColor: '#ffffff' },
+  dot: { position: 'absolute', borderRadius: 9, borderWidth: 2.5, borderColor: '#ffffff' },
   threeD: { position: 'absolute', left: 14, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, height: 40, borderRadius: 20 },
   threeDText: { color: '#ffffff', fontSize: 14, fontWeight: '800' },
 });

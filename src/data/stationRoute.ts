@@ -10,7 +10,28 @@ export interface Pt {
 const SCALE = 100 / course.totalMiles;
 const pts = (course.coordinates as number[][]).map(([latitude, longitude, mile]) => ({ latitude, longitude, mile: mile * SCALE }));
 
-const slice = (from: number, to: number): Pt[] => pts.filter((p) => p.mile >= from - 0.05 && p.mile <= to + 0.05).map(({ latitude, longitude }) => ({ latitude, longitude }));
+// Where along the GPX a station sits. The official mile can differ from the GPX distance by a few tenths, and a station
+// reached by an out-and-back spur (Sunlight) is the tip of the spur, so match the station's own coordinate to the
+// nearest track point near its mile rather than trusting the mile alone.
+const WINDOW_MILES = 3;
+function trackIndex(st: AidStation): number {
+  if (st.kind === 'start') return 0;
+  if (st.kind === 'finish') return pts.length - 1;
+  const lonScale = Math.cos((st.courseCoordinate.latitude * Math.PI) / 180);
+  let best = -1;
+  let bestD = Infinity;
+  pts.forEach((p, i) => {
+    if (Math.abs(p.mile - st.mile) > WINDOW_MILES) return;
+    const d = (p.latitude - st.courseCoordinate.latitude) ** 2 + ((p.longitude - st.courseCoordinate.longitude) * lonScale) ** 2;
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  });
+  return best >= 0 ? best : pts.findIndex((p) => p.mile >= st.mile);
+}
+
+const between = (i: number, j: number): Pt[] => pts.slice(Math.min(i, j), Math.max(i, j) + 1).map(({ latitude, longitude }) => ({ latitude, longitude }));
 
 export interface StationRoute {
   prev: AidStation | null;
@@ -27,8 +48,9 @@ export function stationRoute(id: string): StationRoute | null {
   const station = AID_STATIONS[i];
   const prev = i > 0 ? AID_STATIONS[i - 1] : null;
   const next = i < AID_STATIONS.length - 1 ? AID_STATIONS[i + 1] : null;
-  const before = prev ? slice(prev.mile, station.mile) : [];
-  const after = next ? slice(station.mile, next.mile) : [];
+  const here = trackIndex(station);
+  const before = prev ? between(trackIndex(prev), here) : [];
+  const after = next ? between(here, trackIndex(next)) : [];
   const stops = [prev, station, next].filter((s): s is AidStation => !!s).map((s) => s.courseCoordinate);
   return { prev, station, next, before, after, all: [...before, ...after, ...stops] };
 }
