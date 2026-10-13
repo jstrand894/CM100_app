@@ -1,6 +1,6 @@
 // Pace model built from finisher split tables in the 2025 crew planning sheet (arrival times at each
 // station for 27 to 34 hour finishes, measured from the 6:00 AM start). Goal times between curves are
-// interpolated; goal times outside 27-34 h scale the nearest curve. This is an estimate, not a prediction.
+// interpolated; goal times outside 27-34 h scale the nearest curve, so very fast goals are rougher guesses. This is an estimate, not a prediction.
 export const START_HOUR = 6; // 6:00 AM Friday
 
 // Elapsed hours from the start to each station, one array per curve, in STATION_ORDER.
@@ -97,7 +97,7 @@ export interface Projection {
   elapsed: Record<string, number>;
 }
 
-const FIT_MIN = 20, FIT_MAX = 45, FIT_STEP = 0.02;
+const FIT_MIN = 14, FIT_MAX = 45, FIT_STEP = 0.02;
 const GOAL_BLEND_UNTIL = 0.45; // share of the race behind the runner at which the logged pace is fully trusted
 const RECENCY_HALF_LIFE = 2; // a logged point this many logged points back counts half as much
 

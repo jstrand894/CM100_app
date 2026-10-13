@@ -25,9 +25,9 @@ import { nowMs, phaseAt, START_MS } from '../../src/data/weekend';
 import { BRAND_BLUE, useTheme } from '../../src/theme';
 import { useUnits } from '../../src/units';
 
-const MIN = 24 * 60;
+const MIN = 16 * 60;
 const MAX = 36 * 60;
-const PRESETS = [27, 28.5, 30, 32, 34, 36];
+const PRESETS = [21, 24, 27, 28.5, 30, 32, 34, 36];
 const START_ABS = START_HOUR * 60; // minutes after Friday midnight at the gun
 const DAY = 1440;
 
